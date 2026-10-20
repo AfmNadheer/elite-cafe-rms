@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * The final bill of an order (FR-23 to FR-25).
@@ -50,5 +51,11 @@ class Bill extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    /** The payment for this bill (one payment per bill). */
+    public function payment(): HasOne
+    {
+        return $this->hasOne(Payment::class)->latestOfMany();
     }
 }

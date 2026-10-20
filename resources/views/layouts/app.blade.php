@@ -39,6 +39,36 @@
                         </li>
                     @endif
 
+                    @if (auth()->user()->hasRole('admin', 'waiter'))
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('orders.*') ? 'active' : '' }}" href="{{ route('orders.index') }}">
+                                <i class="bi bi-receipt"></i> Orders
+                            </a>
+                        </li>
+                    @endif
+
+                    @if (auth()->user()->hasRole('admin', 'kitchen'))
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('kitchen.*') ? 'active' : '' }}" href="{{ route('kitchen.index') }}">
+                                <i class="bi bi-fire"></i> Kitchen
+                            </a>
+                        </li>
+                    @endif
+
+                    @if (auth()->user()->hasRole('admin', 'cashier'))
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle {{ request()->routeIs('billing.*', 'bills.*', 'day-end.*') ? 'active' : '' }}"
+                               href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-cash-coin"></i> Billing
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ route('billing.index') }}"><i class="bi bi-cash-coin"></i> Bill an Order</a></li>
+                                <li><a class="dropdown-item" href="{{ route('bills.index') }}"><i class="bi bi-receipt-cutoff"></i> Bills</a></li>
+                                <li><a class="dropdown-item" href="{{ route('day-end.index') }}"><i class="bi bi-calendar2-check"></i> Day-End Summary</a></li>
+                            </ul>
+                        </li>
+                    @endif
+
                     @if (auth()->user()->hasRole('admin'))
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle {{ request()->routeIs('users.*', 'categories.*', 'menu-items.*', 'tables.index', 'tables.create', 'tables.edit') ? 'active' : '' }}"

@@ -22,18 +22,35 @@
             <span class="badge text-bg-secondary fs-6">Total: {{ $total }}</span>
         </div>
     </div>
-    <p class="text-muted small">This page refreshes every 30 seconds.</p>
+    <p class="text-muted small">This page refreshes every 30 seconds.@if (auth()->user()->hasRole('admin', 'waiter')) Tap a table to take or view its order.@endif</p>
 
     @forelse ($sections as $section => $tables)
         <h2 class="h6 fw-semibold text-uppercase text-muted mt-4 mb-2">{{ $section }}</h2>
         <div class="row g-3">
             @foreach ($tables as $table)
+                @php
+                    // Waiter/admin: free table -> new order, occupied table -> its open order. Cashier: occupied table -> bill
+                    $link = null;
+                    if (auth()->user()->hasRole('admin', 'waiter')) {
+                        $link = $table->openOrder
+                            ? route('orders.show', $table->openOrder)
+                            : route('orders.create', ['table' => $table->id]);
+                    } elseif ($table->openOrder) {
+                        // Cashier: occupied table -> bill screen
+                        $link = route('billing.create', $table->openOrder);
+                    }
+                @endphp
                 <div class="col-4 col-sm-3 col-md-2">
-                    <div class="table-tile tile-{{ $table->status }} shadow-sm">
-                        <div class="no">{{ $table->table_no }}</div>
-                        <div class="small"><i class="bi bi-people"></i> {{ $table->capacity }} seats</div>
-                        <div class="small text-uppercase fw-semibold mt-1">{{ $table->status }}</div>
-                    </div>
+                    <a @if ($link) href="{{ $link }}" @endif class="d-block text-decoration-none">
+                        <div class="table-tile tile-{{ $table->status }} shadow-sm">
+                            <div class="no">{{ $table->table_no }}</div>
+                            <div class="small"><i class="bi bi-people"></i> {{ $table->capacity }} seats</div>
+                            <div class="small text-uppercase fw-semibold mt-1">{{ $table->status }}</div>
+                            @if ($table->openOrder)
+                                <div class="small mt-1">Order #{{ $table->openOrder->id }}</div>
+                            @endif
+                        </div>
+                    </a>
                 </div>
             @endforeach
         </div>

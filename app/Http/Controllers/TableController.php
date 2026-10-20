@@ -18,7 +18,7 @@ class TableController extends Controller
     /** Live map of all tables, grouped by section. */
     public function map(): View
     {
-        $tables = RestaurantTable::orderBy('section')->orderBy('table_no')->get();
+        $tables = RestaurantTable::with('openOrder')->orderBy('section')->orderBy('table_no')->get();
 
         return view('tables.map', [
             'sections' => $tables->groupBy(fn ($t) => $t->section ?: 'Other'),

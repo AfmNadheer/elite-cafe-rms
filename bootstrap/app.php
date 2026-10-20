@@ -21,5 +21,22 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectUsersTo('/dashboard');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // 419 "Page Expired" (old form / session timed out): go back with a friendly message
+        $exceptions->render(function (\Throwable $e, \Illuminate\Http\Request $request) {
+            $expired = $e instanceof \Illuminate\Session\TokenMismatchException
+                || ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface && $e->getStatusCode() === 419);
+
+            if (! $expired || $request->expectsJson()) {
+                return null;
+            }
+
+            $message = 'The page expired. Please try again.';
+
+            $response = redirect()->back()
+                ->withInput($request->except('password', 'password_confirmation', 'approver_password', '_token'))
+                ->with('error', $message);
+
+            // The login page shows errors under the username box
+            return $request->is('login') ? $response->withErrors(['username' => $message]) : $response;
+        });
     })->create();

@@ -15,8 +15,8 @@
         @php
             $cards = [
                 ['label' => 'Free tables', 'value' => $stats['free_tables'].' / '.$stats['tables'], 'icon' => 'bi-grid-3x3-gap', 'color' => 'success'],
-                ['label' => 'Menu items', 'value' => $stats['menu_items'], 'icon' => 'bi-journal-text', 'color' => 'primary'],
-                ['label' => 'Categories', 'value' => $stats['categories'], 'icon' => 'bi-tags', 'color' => 'info'],
+                ['label' => 'Open orders', 'value' => $stats['open_orders'], 'icon' => 'bi-receipt', 'color' => 'primary'],
+                ['label' => "Today's sales", 'value' => 'Rs. '.number_format($stats['today_sales'], 2), 'icon' => 'bi-cash-stack', 'color' => 'info'],
                 ['label' => 'Low-stock items', 'value' => $stats['low_stock'], 'icon' => 'bi-exclamation-triangle', 'color' => 'danger'],
             ];
         @endphp
@@ -43,9 +43,10 @@
             ['name' => 'Users', 'icon' => 'bi-people', 'roles' => ['admin'], 'iteration' => 1, 'route' => 'users.index'],
             ['name' => 'Menu & Categories', 'icon' => 'bi-journal-text', 'roles' => ['admin'], 'iteration' => 1, 'route' => 'menu-items.index'],
             ['name' => 'Table Map', 'icon' => 'bi-grid-3x3-gap', 'roles' => ['admin', 'waiter', 'cashier'], 'iteration' => 1, 'route' => 'tables.map'],
-            ['name' => 'Orders', 'icon' => 'bi-receipt', 'roles' => ['admin', 'waiter'], 'iteration' => 2],
-            ['name' => 'Kitchen Display', 'icon' => 'bi-fire', 'roles' => ['admin', 'kitchen'], 'iteration' => 2],
-            ['name' => 'Billing', 'icon' => 'bi-cash-coin', 'roles' => ['admin', 'cashier'], 'iteration' => 3],
+            ['name' => 'Orders', 'icon' => 'bi-receipt', 'roles' => ['admin', 'waiter'], 'iteration' => 2, 'route' => 'orders.index'],
+            ['name' => 'Kitchen Display', 'icon' => 'bi-fire', 'roles' => ['admin', 'kitchen'], 'iteration' => 2, 'route' => 'kitchen.index'],
+            ['name' => 'Billing', 'icon' => 'bi-cash-coin', 'roles' => ['admin', 'cashier'], 'iteration' => 3, 'route' => 'billing.index'],
+            ['name' => 'Day-End Summary', 'icon' => 'bi-calendar2-check', 'roles' => ['admin', 'cashier'], 'iteration' => 3, 'route' => 'day-end.index'],
             ['name' => 'Inventory', 'icon' => 'bi-box-seam', 'roles' => ['admin', 'storekeeper'], 'iteration' => 4],
             ['name' => 'Suppliers & Purchases', 'icon' => 'bi-truck', 'roles' => ['admin', 'storekeeper'], 'iteration' => 4],
             ['name' => 'Reports', 'icon' => 'bi-bar-chart-line', 'roles' => ['admin'], 'iteration' => 5],

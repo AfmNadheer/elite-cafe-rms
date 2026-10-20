@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Bill;
 use App\Models\Category;
 use App\Models\Ingredient;
 use App\Models\MenuItem;
@@ -23,6 +24,9 @@ class DashboardController extends Controller
             'menu_items' => MenuItem::count(),
             'categories' => Category::count(),
             'staff' => User::where('is_active', true)->count(),
+            'today_sales' => (float) Bill::whereDate('created_at', today())->sum('total'),
+            'today_bills' => Bill::whereDate('created_at', today())->count(),
+            'open_orders' => \App\Models\Order::where('status', 'open')->count(),
             'low_stock' => Ingredient::whereColumn('quantity', '<=', 'reorder_level')->count(),
         ];
 
