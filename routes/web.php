@@ -23,6 +23,9 @@ use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\RecipeController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReservationController;
+use App\Http\Controllers\RoomBookingController;
+use App\Http\Controllers\RoomController;
+use App\Http\Controllers\RoomTypeController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\StockAdjustmentController;
 use App\Http\Controllers\StockAlertController;
@@ -127,6 +130,19 @@ Route::middleware('auth')->group(function () {
         Route::get('/bills/{bill}', [BillController::class, 'show'])->name('bills.show');
         Route::get('/day-end', [DayEndController::class, 'index'])->name('day-end.index');
 
+        // Rooms: board, bookings, check-in / check-out (front desk)
+        Route::get('/room-board', [RoomBookingController::class, 'board'])->name('room-bookings.board');
+        Route::get('/room-bookings', [RoomBookingController::class, 'index'])->name('room-bookings.index');
+        Route::get('/room-bookings/availability', [RoomBookingController::class, 'availability'])->name('room-bookings.availability');
+        Route::get('/room-bookings/create', [RoomBookingController::class, 'create'])->name('room-bookings.create');
+        Route::post('/room-bookings', [RoomBookingController::class, 'store'])->name('room-bookings.store');
+        Route::get('/room-bookings/{roomBooking}', [RoomBookingController::class, 'show'])->name('room-bookings.show');
+        Route::patch('/room-bookings/{roomBooking}/check-in', [RoomBookingController::class, 'checkIn'])->name('room-bookings.check-in');
+        Route::post('/room-bookings/{roomBooking}/payments', [RoomBookingController::class, 'addPayment'])->name('room-bookings.payments.store');
+        Route::patch('/room-bookings/{roomBooking}/check-out', [RoomBookingController::class, 'checkOut'])->name('room-bookings.check-out');
+        Route::patch('/room-bookings/{roomBooking}/cancel', [RoomBookingController::class, 'cancel'])->name('room-bookings.cancel');
+        Route::get('/room-bookings/{roomBooking}/invoice', [RoomBookingController::class, 'invoice'])->name('room-bookings.invoice');
+
         // Online delivery orders (staff side)
         Route::get('/deliveries', [DeliveryController::class, 'index'])->name('deliveries.index');
         Route::get('/deliveries/{delivery}', [DeliveryController::class, 'show'])->name('deliveries.show');
@@ -176,6 +192,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/recipes', [RecipeController::class, 'index'])->name('recipes.index');
         Route::get('/recipes/{menuItem}', [RecipeController::class, 'edit'])->name('recipes.edit');
         Route::put('/recipes/{menuItem}', [RecipeController::class, 'update'])->name('recipes.update');
+
+        // Rooms and room types (Admin)
+        Route::resource('rooms', RoomController::class)->except(['show']);
+        Route::resource('room-types', RoomTypeController::class)->only(['index', 'store', 'update', 'destroy']);
 
         // Other expenses (FR-36)
         Route::resource('expenses', ExpenseController::class)->except(['show']);

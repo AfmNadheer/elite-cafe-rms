@@ -70,6 +70,7 @@
             ['name' => 'Kitchen Display', 'icon' => 'bi-fire', 'roles' => ['admin', 'kitchen'], 'iteration' => 2, 'route' => 'kitchen.index'],
             ['name' => 'Billing', 'icon' => 'bi-cash-coin', 'roles' => ['admin', 'cashier'], 'iteration' => 3, 'route' => 'billing.index'],
             ['name' => 'Online Deliveries', 'icon' => 'bi-bicycle', 'roles' => ['admin', 'cashier'], 'iteration' => 7, 'route' => 'deliveries.index'],
+            ['name' => 'Rooms', 'icon' => 'bi-building', 'roles' => ['admin', 'cashier'], 'iteration' => 8, 'route' => 'room-bookings.board'],
             ['name' => 'Day-End Summary', 'icon' => 'bi-calendar2-check', 'roles' => ['admin', 'cashier'], 'iteration' => 3, 'route' => 'day-end.index'],
             ['name' => 'Inventory', 'icon' => 'bi-box-seam', 'roles' => ['admin', 'storekeeper'], 'iteration' => 4, 'route' => 'ingredients.index'],
             ['name' => 'Suppliers & Purchases', 'icon' => 'bi-truck', 'roles' => ['admin', 'storekeeper'], 'iteration' => 4, 'route' => 'purchases.index'],

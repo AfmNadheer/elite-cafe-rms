@@ -65,6 +65,22 @@
 
                     @if (auth()->user()->hasRole('admin', 'cashier'))
                         @php $activeDeliveries = \App\Models\Delivery::whereIn('status', ['placed', 'out_for_delivery'])->count(); @endphp
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle {{ request()->routeIs('room-bookings.*', 'rooms.*', 'room-types.*') ? 'active' : '' }}"
+                               href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-building"></i> Rooms
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ route('room-bookings.board') }}"><i class="bi bi-grid"></i> Room Board</a></li>
+                                <li><a class="dropdown-item" href="{{ route('room-bookings.availability') }}"><i class="bi bi-plus-lg"></i> New Booking</a></li>
+                                <li><a class="dropdown-item" href="{{ route('room-bookings.index') }}"><i class="bi bi-journal-bookmark"></i> Bookings</a></li>
+                                @if (auth()->user()->hasRole('admin'))
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{{ route('rooms.index') }}"><i class="bi bi-door-closed"></i> Rooms</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('room-types.index') }}"><i class="bi bi-tags"></i> Room Types &amp; Prices</a></li>
+                                @endif
+                            </ul>
+                        </li>
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('deliveries.*') ? 'active' : '' }}" href="{{ route('deliveries.index') }}">
                                 <i class="bi bi-bicycle"></i> Deliveries
