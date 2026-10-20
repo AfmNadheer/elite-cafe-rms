@@ -1,0 +1,22 @@
+/* Elite Cafe RMS – custom styles on top of Bootstrap 5 */
+:root {
+    --ec-primary: #8b3a1a;       /* coffee brown */
+    --ec-primary-dark: #6b2a10;
+    --ec-accent: #f2a541;        /* warm orange */
+    --ec-bg: #f7f4f0;
+}
+body { background: var(--ec-bg); }
+.bg-ec { background: var(--ec-primary) !important; }
+.btn-ec { background: var(--ec-primary); border-color: var(--ec-primary); color: #fff; }
+.btn-ec:hover, .btn-ec:focus { background: var(--ec-primary-dark); border-color: var(--ec-primary-dark); color: #fff; }
+.text-ec { color: var(--ec-primary) !important; }
+
+/* Login page */
+.login-wrap { min-height: 100vh; }
+.login-brand { background: linear-gradient(160deg, var(--ec-primary) 0%, var(--ec-primary-dark) 100%); color: #fff; }
+.login-card { max-width: 420px; width: 100%; }
+
+/* Dashboard */
+.stat-card .icon { width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center; font-size: 1.4rem; }
+.module-card { transition: transform .15s ease, box-shadow .15s ease; }
+.module-card:hover { transform: translateY(-2px); box-shadow: 0 .5rem 1rem rgba(0,0,0,.08); }
