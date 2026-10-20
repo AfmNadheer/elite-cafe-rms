@@ -31,6 +31,29 @@
                             <i class="bi bi-speedometer2"></i> Dashboard
                         </a>
                     </li>
+                    @if (auth()->user()->hasRole('admin', 'waiter', 'cashier'))
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('tables.map') ? 'active' : '' }}" href="{{ route('tables.map') }}">
+                                <i class="bi bi-grid-3x3-gap"></i> Table Map
+                            </a>
+                        </li>
+                    @endif
+
+                    @if (auth()->user()->hasRole('admin'))
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle {{ request()->routeIs('users.*', 'categories.*', 'menu-items.*', 'tables.index', 'tables.create', 'tables.edit') ? 'active' : '' }}"
+                               href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-gear"></i> Setup
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ route('menu-items.index') }}"><i class="bi bi-journal-text"></i> Menu Items</a></li>
+                                <li><a class="dropdown-item" href="{{ route('categories.index') }}"><i class="bi bi-tags"></i> Categories</a></li>
+                                <li><a class="dropdown-item" href="{{ route('tables.index') }}"><i class="bi bi-grid-3x3-gap"></i> Tables</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ route('users.index') }}"><i class="bi bi-people"></i> Users</a></li>
+                            </ul>
+                        </li>
+                    @endif
                     {{-- More menu links are added as each module is built --}}
                 </ul>
 

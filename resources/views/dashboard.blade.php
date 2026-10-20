@@ -40,9 +40,9 @@
     {{-- Modules this role can use (links are enabled as each iteration is completed) --}}
     @php
         $modules = [
-            ['name' => 'Users', 'icon' => 'bi-people', 'roles' => ['admin'], 'iteration' => 1],
-            ['name' => 'Menu & Categories', 'icon' => 'bi-journal-text', 'roles' => ['admin'], 'iteration' => 1],
-            ['name' => 'Tables', 'icon' => 'bi-grid-3x3-gap', 'roles' => ['admin', 'waiter', 'cashier'], 'iteration' => 1],
+            ['name' => 'Users', 'icon' => 'bi-people', 'roles' => ['admin'], 'iteration' => 1, 'route' => 'users.index'],
+            ['name' => 'Menu & Categories', 'icon' => 'bi-journal-text', 'roles' => ['admin'], 'iteration' => 1, 'route' => 'menu-items.index'],
+            ['name' => 'Table Map', 'icon' => 'bi-grid-3x3-gap', 'roles' => ['admin', 'waiter', 'cashier'], 'iteration' => 1, 'route' => 'tables.map'],
             ['name' => 'Orders', 'icon' => 'bi-receipt', 'roles' => ['admin', 'waiter'], 'iteration' => 2],
             ['name' => 'Kitchen Display', 'icon' => 'bi-fire', 'roles' => ['admin', 'kitchen'], 'iteration' => 2],
             ['name' => 'Billing', 'icon' => 'bi-cash-coin', 'roles' => ['admin', 'cashier'], 'iteration' => 3],
@@ -58,13 +58,19 @@
         @foreach ($modules as $module)
             @if ($user->hasRole(...$module['roles']))
                 <div class="col-6 col-md-4 col-xl-3">
-                    <div class="card module-card border-0 shadow-sm h-100">
+                    @php $ready = isset($module['route']) && Route::has($module['route']); @endphp
+                    <a @if ($ready) href="{{ route($module['route']) }}" @endif
+                       class="card module-card border-0 shadow-sm h-100 text-decoration-none text-body {{ $ready ? '' : 'opacity-75' }}">
                         <div class="card-body text-center py-4">
                             <i class="bi {{ $module['icon'] }} text-ec" style="font-size: 2rem;"></i>
                             <div class="fw-semibold mt-2">{{ $module['name'] }}</div>
-                            <span class="badge text-bg-light mt-2">Coming in iteration {{ $module['iteration'] }}</span>
+                            @if ($ready)
+                                <span class="badge text-bg-success mt-2">Open</span>
+                            @else
+                                <span class="badge text-bg-light mt-2">Coming in iteration {{ $module['iteration'] }}</span>
+                            @endif
                         </div>
-                    </div>
+                    </a>
                 </div>
             @endif
         @endforeach
