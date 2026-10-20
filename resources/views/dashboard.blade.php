@@ -10,6 +10,15 @@
         </div>
     </div>
 
+    {{-- Low-stock alert (FR-32) --}}
+    @if ($user->hasRole('admin', 'storekeeper') && $stats['low_stock'] > 0)
+        <div class="alert alert-danger d-flex flex-wrap align-items-center gap-2">
+            <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+            <strong>{{ $stats['low_stock'] }} ingredient(s) are low on stock.</strong>
+            <a href="{{ route('stock-alerts.index') }}" class="alert-link ms-auto">View low-stock alerts</a>
+        </div>
+    @endif
+
     {{-- Summary cards --}}
     <div class="row g-3 mb-4">
         @php
@@ -47,8 +56,10 @@
             ['name' => 'Kitchen Display', 'icon' => 'bi-fire', 'roles' => ['admin', 'kitchen'], 'iteration' => 2, 'route' => 'kitchen.index'],
             ['name' => 'Billing', 'icon' => 'bi-cash-coin', 'roles' => ['admin', 'cashier'], 'iteration' => 3, 'route' => 'billing.index'],
             ['name' => 'Day-End Summary', 'icon' => 'bi-calendar2-check', 'roles' => ['admin', 'cashier'], 'iteration' => 3, 'route' => 'day-end.index'],
-            ['name' => 'Inventory', 'icon' => 'bi-box-seam', 'roles' => ['admin', 'storekeeper'], 'iteration' => 4],
-            ['name' => 'Suppliers & Purchases', 'icon' => 'bi-truck', 'roles' => ['admin', 'storekeeper'], 'iteration' => 4],
+            ['name' => 'Inventory', 'icon' => 'bi-box-seam', 'roles' => ['admin', 'storekeeper'], 'iteration' => 4, 'route' => 'ingredients.index'],
+            ['name' => 'Suppliers & Purchases', 'icon' => 'bi-truck', 'roles' => ['admin', 'storekeeper'], 'iteration' => 4, 'route' => 'purchases.index'],
+            ['name' => 'Recipes', 'icon' => 'bi-journal-check', 'roles' => ['admin'], 'iteration' => 4, 'route' => 'recipes.index'],
+            ['name' => 'Expenses', 'icon' => 'bi-wallet2', 'roles' => ['admin'], 'iteration' => 4, 'route' => 'expenses.index'],
             ['name' => 'Reports', 'icon' => 'bi-bar-chart-line', 'roles' => ['admin'], 'iteration' => 5],
             ['name' => 'Reservations', 'icon' => 'bi-calendar-check', 'roles' => ['admin', 'waiter', 'cashier'], 'iteration' => 5],
         ];

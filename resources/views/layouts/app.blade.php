@@ -69,6 +69,34 @@
                         </li>
                     @endif
 
+                    @if (auth()->user()->hasRole('admin', 'storekeeper'))
+                        @php $lowStockCount = \App\Models\Ingredient::whereColumn('quantity', '<=', 'reorder_level')->count(); @endphp
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle {{ request()->routeIs('ingredients.*', 'stock-*', 'suppliers.*', 'purchases.*', 'recipes.*', 'expenses.*') ? 'active' : '' }}"
+                               href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-box-seam"></i> Inventory
+                                @if ($lowStockCount)<span class="badge rounded-pill text-bg-danger">{{ $lowStockCount }}</span>@endif
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ route('ingredients.index') }}"><i class="bi bi-box-seam"></i> Ingredients &amp; Stock</a></li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('stock-alerts.index') }}"><i class="bi bi-exclamation-triangle"></i> Low-Stock Alerts
+                                        @if ($lowStockCount)<span class="badge text-bg-danger">{{ $lowStockCount }}</span>@endif
+                                    </a>
+                                </li>
+                                <li><a class="dropdown-item" href="{{ route('stock-adjustments.index') }}"><i class="bi bi-sliders"></i> Adjustments &amp; Wastage</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ route('purchases.index') }}"><i class="bi bi-cart-check"></i> Purchases</a></li>
+                                <li><a class="dropdown-item" href="{{ route('suppliers.index') }}"><i class="bi bi-truck"></i> Suppliers</a></li>
+                                @if (auth()->user()->hasRole('admin'))
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{{ route('recipes.index') }}"><i class="bi bi-journal-check"></i> Recipes</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('expenses.index') }}"><i class="bi bi-wallet2"></i> Expenses</a></li>
+                                @endif
+                            </ul>
+                        </li>
+                    @endif
+
                     @if (auth()->user()->hasRole('admin'))
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle {{ request()->routeIs('users.*', 'categories.*', 'menu-items.*', 'tables.index', 'tables.create', 'tables.edit') ? 'active' : '' }}"

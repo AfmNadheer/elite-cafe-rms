@@ -6,10 +6,17 @@ use App\Http\Controllers\BillingController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DayEndController;
+use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\IngredientController;
 use App\Http\Controllers\KitchenController;
 use App\Http\Controllers\MenuItemController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\OrderItemController;
+use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\RecipeController;
+use App\Http\Controllers\StockAdjustmentController;
+use App\Http\Controllers\StockAlertController;
+use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TableController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -62,6 +69,18 @@ Route::middleware('auth')->group(function () {
         Route::get('/day-end', [DayEndController::class, 'index'])->name('day-end.index');
     });
 
+    // Inventory, suppliers and purchases: storekeeper and admin (FR-29, FR-32 to FR-35)
+    Route::middleware('role:admin,storekeeper')->group(function () {
+        Route::resource('ingredients', IngredientController::class)->except(['show']);
+        Route::get('/ingredients/{ingredient}/adjust', [StockAdjustmentController::class, 'create'])->name('stock-adjustments.create');
+        Route::post('/ingredients/{ingredient}/adjust', [StockAdjustmentController::class, 'store'])->name('stock-adjustments.store');
+        Route::get('/stock-adjustments', [StockAdjustmentController::class, 'index'])->name('stock-adjustments.index');
+        Route::get('/stock-alerts', [StockAlertController::class, 'index'])->name('stock-alerts.index');
+        Route::patch('/stock-alerts/{stockAlert}/resolve', [StockAlertController::class, 'resolve'])->name('stock-alerts.resolve');
+        Route::resource('suppliers', SupplierController::class)->except(['show']);
+        Route::resource('purchases', PurchaseController::class)->only(['index', 'create', 'store', 'show']);
+    });
+
     // Admin-only setup pages
     Route::middleware('role:admin')->group(function () {
         // Users (FR-03): no delete, accounts are deactivated instead
@@ -78,5 +97,13 @@ Route::middleware('auth')->group(function () {
 
         // Tables (FR-10)
         Route::resource('tables', TableController::class)->except(['show']);
+
+        // Recipes (FR-30)
+        Route::get('/recipes', [RecipeController::class, 'index'])->name('recipes.index');
+        Route::get('/recipes/{menuItem}', [RecipeController::class, 'edit'])->name('recipes.edit');
+        Route::put('/recipes/{menuItem}', [RecipeController::class, 'update'])->name('recipes.update');
+
+        // Other expenses (FR-36)
+        Route::resource('expenses', ExpenseController::class)->except(['show']);
     });
 });
