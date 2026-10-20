@@ -15,6 +15,7 @@ class Order extends Model
     protected $fillable = [
         'table_id',
         'user_id',
+        'customer_id',
         'order_type',
         'status',
     ];
@@ -45,5 +46,16 @@ class Order extends Model
         return (float) $this->items
             ->where('status', '!=', 'cancelled')
             ->sum(fn ($item) => $item->quantity * $item->unit_price);
+    }
+
+    /** Online customer (delivery orders only). */
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
+    public function delivery(): HasOne
+    {
+        return $this->hasOne(Delivery::class);
     }
 }

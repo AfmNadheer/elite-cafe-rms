@@ -19,6 +19,7 @@ class Bill extends Model
         'bill_no',
         'subtotal',
         'service_charge',
+        'delivery_fee',
         'discount',
         'total',
     ];
@@ -28,6 +29,7 @@ class Bill extends Model
         return [
             'subtotal' => 'decimal:2',
             'service_charge' => 'decimal:2',
+            'delivery_fee' => 'decimal:2',
             'discount' => 'decimal:2',
             'total' => 'decimal:2',
         ];

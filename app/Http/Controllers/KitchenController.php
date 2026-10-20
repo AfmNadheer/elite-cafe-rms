@@ -37,7 +37,8 @@ class KitchenController extends Controller
                 'quantity' => $item->quantity,
                 'notes' => $item->notes,
                 'status' => $item->status,
-                'table' => $item->order->table?->table_no ?? 'Takeaway',
+                'table' => $item->order->table?->table_no
+                    ?? ($item->order->order_type === 'delivery' ? 'Delivery #'.$item->order_id : 'Takeaway'),
                 'time' => $item->created_at->format('H:i'),
                 'minutes' => (int) $item->created_at->diffInMinutes(now()),
             ]);

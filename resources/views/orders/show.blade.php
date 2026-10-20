@@ -14,7 +14,7 @@
         <div>
             <h1 class="h3 fw-bold mb-0">{{ $order->table?->table_no ?? 'Takeaway' }} <span class="text-muted fs-5">· Order #{{ $order->id }}</span></h1>
             <div class="text-muted small">
-                {{ $order->order_type === 'dine_in' ? 'Dine-in' : 'Takeaway' }} · Waiter: {{ $order->waiter->name }} ·
+                {{ ['dine_in' => 'Dine-in', 'takeaway' => 'Takeaway', 'delivery' => 'Delivery'][$order->order_type] }} · Waiter: {{ $order->waiter?->name ?? 'Online order' }} ·
                 {{ $order->created_at->format('d M Y, H:i') }} ·
                 <span class="badge text-bg-{{ $order->status === 'open' ? 'primary' : 'secondary' }}">{{ ucfirst($order->status) }}</span>
             </div>

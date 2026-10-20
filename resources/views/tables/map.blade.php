@@ -42,10 +42,13 @@
                 @endphp
                 <div class="col-4 col-sm-3 col-md-2">
                     <a @if ($link) href="{{ $link }}" @endif class="d-block text-decoration-none">
-                        <div class="table-tile tile-{{ $table->status }} shadow-sm">
+                        <div class="table-tile tile-{{ $table->display_status }} shadow-sm">
                             <div class="no">{{ $table->table_no }}</div>
                             <div class="small"><i class="bi bi-people"></i> {{ $table->capacity }} seats</div>
-                            <div class="small text-uppercase fw-semibold mt-1">{{ $table->status }}</div>
+                            <div class="small text-uppercase fw-semibold mt-1">{{ $table->display_status }}</div>
+                            @if ($table->nextReservation && ! $table->openOrder)
+                                <div class="small mt-1"><i class="bi bi-calendar-check"></i> {{ $table->nextReservation->reserved_at->format('h:i A') }}</div>
+                            @endif
                             @if ($table->openOrder)
                                 <div class="small mt-1">Order #{{ $table->openOrder->id }}</div>
                             @endif

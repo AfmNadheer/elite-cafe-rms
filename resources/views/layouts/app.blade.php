@@ -39,6 +39,14 @@
                         </li>
                     @endif
 
+                    @if (auth()->user()->hasRole('admin', 'waiter', 'cashier'))
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('reservations.*') ? 'active' : '' }}" href="{{ route('reservations.index') }}">
+                                <i class="bi bi-calendar-check"></i> Reservations
+                            </a>
+                        </li>
+                    @endif
+
                     @if (auth()->user()->hasRole('admin', 'waiter'))
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('orders.*') ? 'active' : '' }}" href="{{ route('orders.index') }}">
@@ -56,6 +64,13 @@
                     @endif
 
                     @if (auth()->user()->hasRole('admin', 'cashier'))
+                        @php $activeDeliveries = \App\Models\Delivery::whereIn('status', ['placed', 'out_for_delivery'])->count(); @endphp
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('deliveries.*') ? 'active' : '' }}" href="{{ route('deliveries.index') }}">
+                                <i class="bi bi-bicycle"></i> Deliveries
+                                @if ($activeDeliveries)<span class="badge rounded-pill text-bg-warning">{{ $activeDeliveries }}</span>@endif
+                            </a>
+                        </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle {{ request()->routeIs('billing.*', 'bills.*', 'day-end.*') ? 'active' : '' }}"
                                href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -99,7 +114,24 @@
 
                     @if (auth()->user()->hasRole('admin'))
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle {{ request()->routeIs('users.*', 'categories.*', 'menu-items.*', 'tables.index', 'tables.create', 'tables.edit') ? 'active' : '' }}"
+                            <a class="nav-link dropdown-toggle {{ request()->routeIs('reports.*', 'qr-menu') ? 'active' : '' }}"
+                               href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-bar-chart-line"></i> Reports
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ route('reports.index') }}"><i class="bi bi-grid"></i> All Reports</a></li>
+                                <li><a class="dropdown-item" href="{{ route('reports.sales') }}"><i class="bi bi-graph-up"></i> Sales</a></li>
+                                <li><a class="dropdown-item" href="{{ route('reports.items') }}"><i class="bi bi-star"></i> Popular Items</a></li>
+                                <li><a class="dropdown-item" href="{{ route('reports.inventory') }}"><i class="bi bi-box-seam"></i> Inventory</a></li>
+                                <li><a class="dropdown-item" href="{{ route('reports.wastage') }}"><i class="bi bi-trash"></i> Wastage</a></li>
+                                <li><a class="dropdown-item" href="{{ route('reports.expenses') }}"><i class="bi bi-wallet2"></i> Expenses &amp; Profit</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ route('qr-menu') }}"><i class="bi bi-qr-code"></i> QR Menu</a></li>
+                            </ul>
+                        </li>
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle {{ request()->routeIs('users.*', 'audit-logs.*', 'backup.*', 'categories.*', 'menu-items.*', 'tables.index', 'tables.create', 'tables.edit') ? 'active' : '' }}"
                                href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="bi bi-gear"></i> Setup
                             </a>
@@ -109,6 +141,8 @@
                                 <li><a class="dropdown-item" href="{{ route('tables.index') }}"><i class="bi bi-grid-3x3-gap"></i> Tables</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{{ route('users.index') }}"><i class="bi bi-people"></i> Users</a></li>
+                                <li><a class="dropdown-item" href="{{ route('audit-logs.index') }}"><i class="bi bi-shield-check"></i> Audit Log</a></li>
+                                <li><a class="dropdown-item" href="{{ route('backup.index') }}"><i class="bi bi-database-down"></i> Backup</a></li>
                             </ul>
                         </li>
                     @endif
@@ -116,10 +150,15 @@
                 </ul>
 
                 <div class="d-flex align-items-center text-white gap-3">
-                    <span class="small">
-                        <i class="bi bi-person-circle"></i> {{ auth()->user()->name }}
-                        <span class="badge bg-light text-dark ms-1">{{ auth()->user()->roleName() }}</span>
-                    </span>
+                    <div class="dropdown">
+                        <a href="#" class="small text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle"></i> {{ auth()->user()->name }}
+                            <span class="badge bg-light text-dark ms-1">{{ auth()->user()->roleName() }}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{{ route('profile.password') }}"><i class="bi bi-key"></i> Change Password</a></li>
+                        </ul>
+                    </div>
                     <form method="POST" action="{{ route('logout') }}" class="m-0">
                         @csrf
                         <button type="submit" class="btn btn-sm btn-outline-light">

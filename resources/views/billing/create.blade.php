@@ -8,12 +8,19 @@
     <a href="{{ route('billing.index') }}" class="text-decoration-none small"><i class="bi bi-arrow-left"></i> Billing</a>
     <h1 class="h3 fw-bold my-3">
         Bill for {{ $order->table?->table_no ?? 'Takeaway' }}
-        <span class="text-muted fs-5">· Order #{{ $order->id }} · {{ $order->waiter->name }}</span>
+        <span class="text-muted fs-5">· Order #{{ $order->id }} · {{ $order->waiter?->name ?? 'Online' }}</span>
     </h1>
 
     @error('order')
         <div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> {{ $message }}</div>
     @enderror
+    @if ($pendingOnline)
+        <div class="alert alert-info d-flex flex-wrap align-items-center gap-2">
+            <i class="bi bi-credit-card-2-front"></i>
+            An online payment of Rs. {{ number_format($pendingOnline->amount, 2) }} ({{ $pendingOnline->order_ref }}) is waiting for PayHere.
+            <a href="{{ route('payhere.return', $pendingOnline) }}" class="alert-link ms-auto">Check status</a>
+        </div>
+    @endif
     @if ($unfinished)
         <div class="alert alert-warning">
             <i class="bi bi-hourglass-split"></i>
@@ -100,7 +107,57 @@
                         <input type="radio" class="btn-check" name="method" id="cash" value="cash" @checked(old('method', 'cash') === 'cash')>
                         <label class="btn btn-outline-success" for="cash"><i class="bi bi-cash"></i> Cash</label>
                         <input type="radio" class="btn-check" name="method" id="card" value="card" @checked(old('method') === 'card')>
-                        <label class="btn btn-outline-primary" for="card"><i class="bi bi-credit-card"></i> Card</label>
+                        <label class="btn btn-outline-primary" for="card"><i class="bi bi-credit-card"></i> Card machine</label>
+                        @if ($onlineReady)
+                            <input type="radio" class="btn-check" name="method" id="online" value="online" @checked(old('method') === 'online')>
+                            <label class="btn btn-outline-dark" for="online"><i class="bi bi-globe"></i> Online</label>
+                        @endif
+                    </div>
+
+                    {{-- Card machine slip details --}}
+                    <div id="cardBox" class="border rounded p-2 mb-2">
+                        <div class="small text-muted mb-1"><i class="bi bi-credit-card"></i> From the card machine slip</div>
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <select name="card_type" class="form-select form-select-sm @error('card_type') is-invalid @enderror" aria-label="Card type">
+                                    <option value="">Card type…</option>
+                                    @foreach (\App\Models\Payment::CARD_TYPES as $key => $label)
+                                        <option value="{{ $key }}" @selected(old('card_type') === $key)>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                                @error('card_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="col-6">
+                                <input type="text" name="card_last4" value="{{ old('card_last4') }}" maxlength="4" inputmode="numeric" pattern="[0-9]{4}"
+                                       class="form-control form-control-sm @error('card_last4') is-invalid @enderror" placeholder="Last 4 digits" aria-label="Last 4 digits">
+                                @error('card_last4')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="col-6">
+                                <input type="text" name="approval_code" value="{{ old('approval_code') }}" maxlength="12"
+                                       class="form-control form-control-sm text-uppercase @error('approval_code') is-invalid @enderror" placeholder="Approval code" aria-label="Approval code">
+                                @error('approval_code')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Online card payment through PayHere --}}
+                    <div id="onlineBox" class="border rounded p-2 mb-2">
+                        <div class="small text-muted mb-1"><i class="bi bi-globe"></i> Customer details for PayHere (receipt is emailed)</div>
+                        <input type="text" name="customer_name" value="{{ old('customer_name') }}" maxlength="100"
+                               class="form-control form-control-sm mb-2 @error('customer_name') is-invalid @enderror" placeholder="Customer name" aria-label="Customer name">
+                        @error('customer_name')<div class="invalid-feedback mb-2">{{ $message }}</div>@enderror
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <input type="tel" name="customer_phone" value="{{ old('customer_phone') }}" maxlength="20"
+                                       class="form-control form-control-sm @error('customer_phone') is-invalid @enderror" placeholder="Phone" aria-label="Phone">
+                                @error('customer_phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="col-6">
+                                <input type="email" name="customer_email" value="{{ old('customer_email') }}" maxlength="100"
+                                       class="form-control form-control-sm @error('customer_email') is-invalid @enderror" placeholder="Email" aria-label="Email">
+                                @error('customer_email')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                        </div>
                     </div>
 
                     <div id="cashBox">
@@ -149,13 +206,19 @@
 
         const isCash = $('cash').checked;
         $('cashBox').style.display = isCash ? '' : 'none';
+        const method = document.querySelector('input[name="method"]:checked')?.value;
+        $('cardBox').style.display = method === 'card' ? '' : 'none';
+        $('onlineBox').style.display = method === 'online' ? '' : 'none';
+        $('payBtn').innerHTML = method === 'online'
+            ? '<i class="bi bi-globe"></i> Continue to Online Payment'
+            : '<i class="bi bi-check2-circle"></i> Save Payment &amp; Print Bill';
         const paid = parseFloat($('amount_paid').value) || 0;
         const balance = round2(paid - total);
         $('balance').textContent = paid ? money(balance) : '0.00';
         $('balance').className = balance < 0 && paid ? 'text-danger' : 'text-success';
     }
 
-    ['discount_type', 'discount_value', 'amount_paid', 'cash', 'card'].forEach(id => {
+    ['discount_type', 'discount_value', 'amount_paid', 'cash', 'card', 'online'].filter(id => $(id)).forEach(id => {
         $(id).addEventListener('input', update);
         $(id).addEventListener('change', update);
     });

@@ -36,4 +36,13 @@ class RestaurantTable extends Model
     {
         return $this->hasOne(Order::class, 'table_id')->where('status', 'open');
     }
+
+    /** Next booking for today that has not started yet (or started up to 15 minutes ago). */
+    public function nextReservation(): HasOne
+    {
+        return $this->hasOne(Reservation::class, 'table_id')
+            ->where('status', 'booked')
+            ->whereBetween('reserved_at', [now()->subMinutes(15), now()->endOfDay()])
+            ->orderBy('reserved_at');
+    }
 }

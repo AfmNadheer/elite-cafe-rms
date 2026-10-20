@@ -14,6 +14,9 @@ class Payment extends Model
     protected $fillable = [
         'bill_id',
         'method',
+        'card_type',
+        'card_last4',
+        'approval_code',
         'amount_paid',
         'balance',
         'paid_at',
@@ -31,5 +34,17 @@ class Payment extends Model
     public function bill(): BelongsTo
     {
         return $this->belongsTo(Bill::class);
+    }
+
+    public const CARD_TYPES = ['visa' => 'Visa', 'mastercard' => 'Mastercard', 'amex' => 'American Express', 'other' => 'Other'];
+
+    /** e.g. "Visa **** 4242" */
+    public function cardLabel(): ?string
+    {
+        if ($this->method !== 'card' || ! $this->card_type) {
+            return null;
+        }
+
+        return (self::CARD_TYPES[$this->card_type] ?? 'Card').' **** '.$this->card_last4;
     }
 }

@@ -22,6 +22,7 @@ class OrderController extends Controller
     {
         $orders = Order::with(['table', 'waiter', 'items'])
             ->where('status', 'open')
+            ->where('order_type', '!=', 'delivery')   // online deliveries are handled on the Deliveries page
             ->latest()
             ->get();
 

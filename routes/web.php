@@ -1,19 +1,29 @@
 <?php
 
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BackupController;
 use App\Http\Controllers\BillController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CustomerAuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DayEndController;
+use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\IngredientController;
 use App\Http\Controllers\KitchenController;
 use App\Http\Controllers\MenuItemController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\OrderItemController;
+use App\Http\Controllers\PayHereController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PublicMenuController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\RecipeController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ReservationController;
+use App\Http\Controllers\ShopController;
 use App\Http\Controllers\StockAdjustmentController;
 use App\Http\Controllers\StockAlertController;
 use App\Http\Controllers\SupplierController;
@@ -23,6 +33,45 @@ use Illuminate\Support\Facades\Route;
 
 // Open the system -> dashboard (or login if not logged in)
 Route::redirect('/', '/dashboard');
+
+// Digital menu for customers (QR code), no login needed (FR-41)
+Route::get('/menu', [PublicMenuController::class, 'index'])->name('public.menu');
+
+// PayHere sends the payment result here, server to server (no login, no CSRF token)
+Route::post('/payhere/notify', [PayHereController::class, 'notify'])->name('payhere.notify');
+
+// ---------- Online ordering for delivery (customers) ----------
+Route::prefix('shop')->name('shop.')->group(function () {
+    // Menu and cart: open to everyone
+    Route::get('/', [ShopController::class, 'index'])->name('index');
+    Route::get('/cart', [ShopController::class, 'cart'])->name('cart');
+    Route::post('/cart', [ShopController::class, 'addToCart'])->name('cart.add');
+    Route::patch('/cart', [ShopController::class, 'updateCart'])->name('cart.update');
+    Route::delete('/cart/{menuItem}', [ShopController::class, 'removeFromCart'])->name('cart.remove');
+
+    // Customer register / login
+    Route::middleware('guest:customer')->group(function () {
+        Route::get('/login', [CustomerAuthController::class, 'showLogin'])->name('login');
+        Route::post('/login', [CustomerAuthController::class, 'login'])->middleware('throttle:10,1')->name('login.submit');
+        Route::get('/register', [CustomerAuthController::class, 'showRegister'])->name('register');
+        Route::post('/register', [CustomerAuthController::class, 'register'])->middleware('throttle:10,1')->name('register.submit');
+    });
+
+    // Logged-in customers
+    Route::middleware('auth:customer')->group(function () {
+        Route::post('/logout', [CustomerAuthController::class, 'logout'])->name('logout');
+        Route::get('/checkout', [ShopController::class, 'checkout'])->name('checkout');
+        Route::post('/checkout', [ShopController::class, 'placeOrder'])->name('checkout.place');
+        Route::get('/orders', [ShopController::class, 'orders'])->name('orders');
+        Route::get('/orders/{delivery}', [ShopController::class, 'showOrder'])->name('orders.show');
+        Route::get('/orders/{delivery}/status', [ShopController::class, 'orderStatus'])->name('orders.status');
+        Route::get('/pay/{onlinePayment}', [ShopController::class, 'pay'])->name('pay');
+        Route::get('/pay/{onlinePayment}/return', [ShopController::class, 'payReturn'])->name('pay.return');
+        Route::get('/pay/{onlinePayment}/cancel', [ShopController::class, 'payCancel'])->name('pay.cancel');
+        Route::get('/pay/{onlinePayment}/status', [ShopController::class, 'payStatus'])->name('pay.status');
+        Route::post('/pay/{onlinePayment}/confirm-sandbox', [ShopController::class, 'confirmSandbox'])->name('pay.confirm-sandbox');
+    });
+});
 
 // Pages for people who are NOT logged in
 Route::middleware('guest')->group(function () {
@@ -35,10 +84,20 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+    // Every user: change own password
+    Route::get('/profile/password', [ProfileController::class, 'editPassword'])->name('profile.password');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+
     // Live table map: admin, waiter, cashier (FR-11)
     Route::get('/table-map', [TableController::class, 'map'])
         ->middleware('role:admin,waiter,cashier')
         ->name('tables.map');
+
+    // Reservations: admin, waiter, cashier (FR-12)
+    Route::middleware('role:admin,waiter,cashier')->group(function () {
+        Route::resource('reservations', ReservationController::class)->except(['show', 'destroy']);
+        Route::patch('/reservations/{reservation}/status', [ReservationController::class, 'status'])->name('reservations.status');
+    });
 
     // Orders: waiter and admin (FR-13 to FR-18)
     Route::middleware('role:admin,waiter')->group(function () {
@@ -67,6 +126,21 @@ Route::middleware('auth')->group(function () {
         Route::get('/bills', [BillController::class, 'index'])->name('bills.index');
         Route::get('/bills/{bill}', [BillController::class, 'show'])->name('bills.show');
         Route::get('/day-end', [DayEndController::class, 'index'])->name('day-end.index');
+
+        // Online delivery orders (staff side)
+        Route::get('/deliveries', [DeliveryController::class, 'index'])->name('deliveries.index');
+        Route::get('/deliveries/{delivery}', [DeliveryController::class, 'show'])->name('deliveries.show');
+        Route::patch('/deliveries/{delivery}/dispatch', [DeliveryController::class, 'dispatch'])->name('deliveries.dispatch');
+        Route::patch('/deliveries/{delivery}/deliver', [DeliveryController::class, 'deliver'])->name('deliveries.deliver');
+        Route::patch('/deliveries/{delivery}/cancel', [DeliveryController::class, 'cancel'])->name('deliveries.cancel');
+
+        // Online card payment through PayHere
+        Route::get('/payhere/{onlinePayment}/checkout', [PayHereController::class, 'checkout'])->name('payhere.checkout');
+        Route::get('/payhere/{onlinePayment}/return', [PayHereController::class, 'return'])->name('payhere.return');
+        Route::get('/payhere/{onlinePayment}/cancel', [PayHereController::class, 'cancel'])->name('payhere.cancel');
+        Route::get('/payhere/{onlinePayment}/status', [PayHereController::class, 'status'])->name('payhere.status');
+        Route::post('/payhere/{onlinePayment}/confirm-sandbox', [PayHereController::class, 'confirmSandbox'])
+            ->middleware('role:admin')->name('payhere.confirm-sandbox');
     });
 
     // Inventory, suppliers and purchases: storekeeper and admin (FR-29, FR-32 to FR-35)
@@ -105,5 +179,21 @@ Route::middleware('auth')->group(function () {
 
         // Other expenses (FR-36)
         Route::resource('expenses', ExpenseController::class)->except(['show']);
+
+        // Reports with PDF export (FR-38 to FR-40)
+        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('/reports/sales', [ReportController::class, 'sales'])->name('reports.sales');
+        Route::get('/reports/items', [ReportController::class, 'items'])->name('reports.items');
+        Route::get('/reports/inventory', [ReportController::class, 'inventory'])->name('reports.inventory');
+        Route::get('/reports/wastage', [ReportController::class, 'wastage'])->name('reports.wastage');
+        Route::get('/reports/expenses', [ReportController::class, 'expenses'])->name('reports.expenses');
+
+        // QR code for the digital menu (FR-41)
+        Route::get('/qr-menu', [PublicMenuController::class, 'qr'])->name('qr-menu');
+
+        // Audit log (NFR-06) and database backup
+        Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+        Route::get('/backup', [BackupController::class, 'index'])->name('backup.index');
+        Route::get('/backup/download', [BackupController::class, 'download'])->name('backup.download');
     });
 });

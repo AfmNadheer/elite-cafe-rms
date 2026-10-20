@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Bill;
+use App\Models\Order;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -18,9 +19,10 @@ class BillingService
      * Work out every amount on the bill.
      *
      * @param  string  $discountType  none | percent | fixed
-     * @return array{subtotal: float, service_charge: float, discount: float, total: float}
+     * @param  float  $deliveryFee  only for online delivery orders
+     * @return array{subtotal: float, service_charge: float, delivery_fee: float, discount: float, total: float}
      */
-    public function calculate(float $subtotal, bool $isDineIn, string $discountType = 'none', float $discountValue = 0): array
+    public function calculate(float $subtotal, bool $isDineIn, string $discountType = 'none', float $discountValue = 0, float $deliveryFee = 0): array
     {
         $serviceCharge = $isDineIn ? round($subtotal * self::SERVICE_CHARGE_PERCENT / 100, 2) : 0.0;
 
@@ -40,8 +42,9 @@ class BillingService
         return [
             'subtotal' => round($subtotal, 2),
             'service_charge' => $serviceCharge,
+            'delivery_fee' => round($deliveryFee, 2),
             'discount' => $discount,
-            'total' => round($subtotal + $serviceCharge - $discount, 2),
+            'total' => round($subtotal + $serviceCharge + $deliveryFee - $discount, 2),
         ];
     }
 
@@ -61,5 +64,29 @@ class BillingService
         $next = $last ? ((int) substr($last, -4)) + 1 : 1;
 
         return $prefix.str_pad((string) $next, 4, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Save the bill and its payment, close the order and free the table.
+     * Used for cash, card machine and online (PayHere) payments.
+     * Must be called inside a database transaction.
+     */
+    public function closeOrder(Order $order, array $amounts, int $cashierId, ?int $approverId, array $payment): Bill
+    {
+        $bill = Bill::create($amounts + [
+            'order_id' => $order->id,
+            'user_id' => $cashierId,
+            'approved_by' => $approverId,
+            'bill_no' => $this->nextBillNumber(),
+        ]);
+
+        $bill->payments()->create($payment + ['paid_at' => now()]);
+
+        // Items still waiting on the counter are handed over with the bill
+        $order->items()->where('status', 'ready')->update(['status' => 'served']);
+        $order->update(['status' => 'closed']);
+        $order->table?->update(['status' => 'free']);
+
+        return $bill;
     }
 }

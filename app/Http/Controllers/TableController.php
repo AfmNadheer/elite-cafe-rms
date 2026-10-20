@@ -18,11 +18,17 @@ class TableController extends Controller
     /** Live map of all tables, grouped by section. */
     public function map(): View
     {
-        $tables = RestaurantTable::with('openOrder')->orderBy('section')->orderBy('table_no')->get();
+        $tables = RestaurantTable::with(['openOrder', 'nextReservation'])->orderBy('section')->orderBy('table_no')->get();
+
+        // A free table with a booking in the next hour is shown as Reserved (FR-11, FR-12)
+        foreach ($tables as $table) {
+            $soon = $table->nextReservation && $table->nextReservation->reserved_at->lte(now()->addHour());
+            $table->display_status = ($table->status === 'free' && $soon) ? 'reserved' : $table->status;
+        }
 
         return view('tables.map', [
             'sections' => $tables->groupBy(fn ($t) => $t->section ?: 'Other'),
-            'counts' => $tables->countBy('status'),
+            'counts' => $tables->countBy('display_status'),
             'total' => $tables->count(),
         ]);
     }

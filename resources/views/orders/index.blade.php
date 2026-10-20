@@ -33,7 +33,7 @@
                             <span class="h5 fw-bold mb-0">{{ $order->table?->table_no ?? 'Takeaway' }}</span>
                             <span class="text-muted small">#{{ $order->id }} · {{ $order->created_at->format('H:i') }}</span>
                         </div>
-                        <div class="small text-muted mb-2">{{ $order->waiter->name }}</div>
+                        <div class="small text-muted mb-2">{{ $order->waiter?->name ?? 'Online' }}</div>
                         <div class="d-flex flex-wrap gap-1 mb-2">
                             @foreach (['pending' => 'secondary', 'preparing' => 'info', 'ready' => 'warning', 'served' => 'success'] as $status => $color)
                                 @php $n = $order->items->where('status', $status)->count(); @endphp

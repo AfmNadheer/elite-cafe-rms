@@ -23,9 +23,12 @@
     <div class="row g-3 mb-4">
         @php
             $cards = [
-                ['label' => 'Free tables', 'value' => $stats['free_tables'].' / '.$stats['tables'], 'icon' => 'bi-grid-3x3-gap', 'color' => 'success'],
-                ['label' => 'Open orders', 'value' => $stats['open_orders'], 'icon' => 'bi-receipt', 'color' => 'primary'],
-                ['label' => "Today's sales", 'value' => 'Rs. '.number_format($stats['today_sales'], 2), 'icon' => 'bi-cash-stack', 'color' => 'info'],
+                // FR-37: today's sales, number of orders, occupied tables, low-stock items
+                $user->hasRole('admin', 'cashier')
+                    ? ['label' => "Today's sales", 'value' => 'Rs. '.number_format($stats['today_sales'], 2), 'icon' => 'bi-cash-stack', 'color' => 'success']
+                    : ['label' => 'Reservations today', 'value' => $stats['today_reservations'], 'icon' => 'bi-calendar-check', 'color' => 'success'],
+                ['label' => 'Orders today', 'value' => $stats['today_orders'].' ('.$stats['open_orders'].' open)', 'icon' => 'bi-receipt', 'color' => 'primary'],
+                ['label' => 'Occupied tables', 'value' => $stats['occupied_tables'].' / '.$stats['tables'], 'icon' => 'bi-grid-3x3-gap', 'color' => 'warning'],
                 ['label' => 'Low-stock items', 'value' => $stats['low_stock'], 'icon' => 'bi-exclamation-triangle', 'color' => 'danger'],
             ];
         @endphp
@@ -46,6 +49,17 @@
         @endforeach
     </div>
 
+    {{-- 7-day sales chart for the Admin (FR-37) --}}
+    @if ($chart)
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">Sales – last 7 days</span>
+                <a href="{{ route('reports.sales') }}" class="small">Full sales report</a>
+            </div>
+            <div class="card-body"><canvas id="salesChart" height="80"></canvas></div>
+        </div>
+    @endif
+
     {{-- Modules this role can use (links are enabled as each iteration is completed) --}}
     @php
         $modules = [
@@ -55,13 +69,17 @@
             ['name' => 'Orders', 'icon' => 'bi-receipt', 'roles' => ['admin', 'waiter'], 'iteration' => 2, 'route' => 'orders.index'],
             ['name' => 'Kitchen Display', 'icon' => 'bi-fire', 'roles' => ['admin', 'kitchen'], 'iteration' => 2, 'route' => 'kitchen.index'],
             ['name' => 'Billing', 'icon' => 'bi-cash-coin', 'roles' => ['admin', 'cashier'], 'iteration' => 3, 'route' => 'billing.index'],
+            ['name' => 'Online Deliveries', 'icon' => 'bi-bicycle', 'roles' => ['admin', 'cashier'], 'iteration' => 7, 'route' => 'deliveries.index'],
             ['name' => 'Day-End Summary', 'icon' => 'bi-calendar2-check', 'roles' => ['admin', 'cashier'], 'iteration' => 3, 'route' => 'day-end.index'],
             ['name' => 'Inventory', 'icon' => 'bi-box-seam', 'roles' => ['admin', 'storekeeper'], 'iteration' => 4, 'route' => 'ingredients.index'],
             ['name' => 'Suppliers & Purchases', 'icon' => 'bi-truck', 'roles' => ['admin', 'storekeeper'], 'iteration' => 4, 'route' => 'purchases.index'],
             ['name' => 'Recipes', 'icon' => 'bi-journal-check', 'roles' => ['admin'], 'iteration' => 4, 'route' => 'recipes.index'],
             ['name' => 'Expenses', 'icon' => 'bi-wallet2', 'roles' => ['admin'], 'iteration' => 4, 'route' => 'expenses.index'],
-            ['name' => 'Reports', 'icon' => 'bi-bar-chart-line', 'roles' => ['admin'], 'iteration' => 5],
-            ['name' => 'Reservations', 'icon' => 'bi-calendar-check', 'roles' => ['admin', 'waiter', 'cashier'], 'iteration' => 5],
+            ['name' => 'Reports', 'icon' => 'bi-bar-chart-line', 'roles' => ['admin'], 'iteration' => 5, 'route' => 'reports.index'],
+            ['name' => 'Reservations', 'icon' => 'bi-calendar-check', 'roles' => ['admin', 'waiter', 'cashier'], 'iteration' => 5, 'route' => 'reservations.index'],
+            ['name' => 'QR Menu', 'icon' => 'bi-qr-code', 'roles' => ['admin'], 'iteration' => 5, 'route' => 'qr-menu'],
+            ['name' => 'Audit Log', 'icon' => 'bi-shield-check', 'roles' => ['admin'], 'iteration' => 6, 'route' => 'audit-logs.index'],
+            ['name' => 'Backup', 'icon' => 'bi-database-down', 'roles' => ['admin'], 'iteration' => 6, 'route' => 'backup.index'],
         ];
     @endphp
 
@@ -88,3 +106,19 @@
         @endforeach
     </div>
 @endsection
+
+@if ($chart)
+    @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+        new Chart(document.getElementById('salesChart'), {
+            type: 'bar',
+            data: {
+                labels: @json($chart['labels']),
+                datasets: [{ label: 'Sales (Rs.)', data: @json($chart['values']), backgroundColor: '#8b3a1a', borderRadius: 6 }]
+            },
+            options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+        });
+    </script>
+    @endpush
+@endif

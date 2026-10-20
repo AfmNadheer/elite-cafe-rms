@@ -25,7 +25,7 @@
                             <span class="h5 fw-bold mb-0">{{ $order->table?->table_no ?? 'Takeaway' }}</span>
                             <span class="text-muted small">#{{ $order->id }} · {{ $order->created_at->format('H:i') }}</span>
                         </div>
-                        <div class="small text-muted mb-2">{{ $order->waiter->name }} · {{ $active->sum('quantity') }} item(s)</div>
+                        <div class="small text-muted mb-2">{{ $order->waiter?->name ?? 'Online' }} · {{ $active->sum('quantity') }} item(s)</div>
                         <div class="h5 mb-2">Rs. {{ number_format($order->subtotal(), 2) }}</div>
                         @if ($unfinished)
                             <span class="badge text-bg-warning"><i class="bi bi-hourglass-split"></i> Kitchen: {{ $unfinished }} not ready</span>

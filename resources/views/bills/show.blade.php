@@ -49,8 +49,13 @@
         <table>
             <tr><td>Bill No</td><td class="text-end">{{ $bill->bill_no }}</td></tr>
             <tr><td>Date</td><td class="text-end">{{ $bill->created_at->format('d/m/Y h:i A') }}</td></tr>
-            <tr><td>Table</td><td class="text-end">{{ $order->table?->table_no ?? 'Takeaway' }}</td></tr>
-            <tr><td>Waiter</td><td class="text-end">{{ $order->waiter->name }}</td></tr>
+            @if ($order->order_type === 'delivery')
+                <tr><td>Type</td><td class="text-end">Delivery</td></tr>
+                <tr><td>Customer</td><td class="text-end">{{ $order->customer?->name }}</td></tr>
+            @else
+                <tr><td>Table</td><td class="text-end">{{ $order->table?->table_no ?? 'Takeaway' }}</td></tr>
+                <tr><td>Waiter</td><td class="text-end">{{ $order->waiter?->name }}</td></tr>
+            @endif
             <tr><td>Cashier</td><td class="text-end">{{ $bill->cashier->name }}</td></tr>
         </table>
         <div class="line"></div>
@@ -71,6 +76,9 @@
             @if ($bill->service_charge > 0)
                 <tr><td>Service charge ({{ \App\Services\BillingService::SERVICE_CHARGE_PERCENT }}%)</td><td class="text-end">{{ number_format($bill->service_charge, 2) }}</td></tr>
             @endif
+            @if ($bill->delivery_fee > 0)
+                <tr><td>Delivery fee</td><td class="text-end">{{ number_format($bill->delivery_fee, 2) }}</td></tr>
+            @endif
             @if ($bill->discount > 0)
                 <tr><td>Discount</td><td class="text-end">-{{ number_format($bill->discount, 2) }}</td></tr>
             @endif
@@ -82,6 +90,9 @@
                 <tr><td>Paid by {{ ucfirst($payment->method) }}</td><td class="text-end">{{ number_format($payment->amount_paid, 2) }}</td></tr>
                 @if ($payment->method === 'cash')
                     <tr><td>Balance</td><td class="text-end">{{ number_format($payment->balance, 2) }}</td></tr>
+                @elseif ($payment->cardLabel())
+                    <tr><td>Card</td><td class="text-end">{{ $payment->cardLabel() }}</td></tr>
+                    <tr><td>Approval code</td><td class="text-end">{{ $payment->approval_code }}</td></tr>
                 @endif
             </table>
             <div class="line"></div>
