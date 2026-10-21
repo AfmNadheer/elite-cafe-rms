@@ -20,6 +20,7 @@
             <span class="badge text-bg-info">Preparing</span>
             <span class="badge text-bg-danger">Waiting &gt; {{ $delayMinutes }} min</span>
             · Updated <span id="updatedAt">–</span>
+            <button type="button" id="soundBtn" class="btn btn-sm btn-outline-secondary ms-2"><i class="bi bi-volume-mute"></i> Sound off</button>
         </div>
     </div>
 
@@ -38,6 +39,9 @@
     // Escape text before putting it into HTML (prevents XSS)
     const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
+    // 75 → "1 h 15 min"
+    const waited = m => m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`;
+
     function card(item) {
         const late = item.minutes >= DELAY;
         const button = item.status === 'pending'
@@ -49,7 +53,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <span class="badge text-bg-dark fs-6">${esc(item.table)}</span>
-                        <span class="small ${late ? 'text-danger fw-bold' : 'text-muted'}"><i class="bi bi-clock"></i> ${item.minutes} min · ${esc(item.time)}</span>
+                        <span class="small ${late ? 'text-danger fw-bold' : 'text-muted'}"><i class="bi bi-clock"></i> ${waited(item.minutes)} · ${esc(item.time)}</span>
                     </div>
                     <div class="d-flex align-items-center gap-2 mt-2">
                         <span class="kds-qty">${item.quantity}×</span>
@@ -63,11 +67,37 @@
         </div>`;
     }
 
+    // Beep when a new item arrives (browsers allow sound only after one click)
+    let audio = null, soundOn = false, known = null;
+    const soundBtn = document.getElementById('soundBtn');
+    soundBtn.addEventListener('click', () => {
+        soundOn = !soundOn;
+        if (soundOn && !audio) audio = new (window.AudioContext || window.webkitAudioContext)();
+        soundBtn.innerHTML = soundOn ? '<i class="bi bi-volume-up"></i> Sound on' : '<i class="bi bi-volume-mute"></i> Sound off';
+        soundBtn.className = 'btn btn-sm ms-2 ' + (soundOn ? 'btn-success' : 'btn-outline-secondary');
+        if (soundOn) beep();
+    });
+    function beep() {
+        if (!soundOn || !audio) return;
+        [0, 0.25].forEach(delay => {
+            const osc = audio.createOscillator(), gain = audio.createGain();
+            osc.frequency.value = 880;
+            gain.gain.setValueAtTime(0.3, audio.currentTime + delay);
+            gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + delay + 0.2);
+            osc.connect(gain).connect(audio.destination);
+            osc.start(audio.currentTime + delay);
+            osc.stop(audio.currentTime + delay + 0.2);
+        });
+    }
+
     async function load() {
         try {
             const res = await fetch('{{ route('kitchen.items') }}', { headers: { 'Accept': 'application/json' } });
             if (!res.ok) throw new Error();
             const data = await res.json();
+            const ids = new Set(data.items.map(i => i.id));
+            if (known && [...ids].some(id => !known.has(id))) beep();
+            known = ids;
             grid.innerHTML = data.items.length
                 ? data.items.map(card).join('')
                 : '<div class="col-12 text-center text-muted py-5"><i class="bi bi-emoji-smile fs-1 d-block"></i>No orders waiting.</div>';

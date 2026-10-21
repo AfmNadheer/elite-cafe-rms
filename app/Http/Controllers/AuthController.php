@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -51,6 +52,9 @@ class AuthController extends Controller
                 if ($user->failed_attempts >= self::MAX_ATTEMPTS) {
                     $user->locked_until = now()->addMinutes(self::LOCK_MINUTES);
                     $user->failed_attempts = 0;
+                    AuditLog::record('account_locked', "{$user->username} locked for ".self::LOCK_MINUTES.' minutes after '.self::MAX_ATTEMPTS.' wrong passwords', $user, $user->id);
+                } else {
+                    AuditLog::record('login_failed', "Wrong password for {$user->username}", $user, $user->id);
                 }
                 $user->save();
             }

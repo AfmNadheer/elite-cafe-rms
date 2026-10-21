@@ -182,3 +182,22 @@ html { scroll-behavior: smooth; }
 /* Button feedback while a form is sending */
 .is-busy { pointer-events: none; opacity: .75; }
 .site-footer .brand img { width: 48px; height: 48px; }
+
+/* ---------- Fixes (v3) ---------- */
+/* Button text must beat the general ".site a" link colour */
+.site a.btn-turmeric, .site .btn-turmeric { color: var(--leaf); }
+.site a.btn-ghost-light, .site .btn-ghost-light { color: #fff; }
+.site a.btn-ghost-light:hover { color: var(--leaf); }
+.site a.btn-leaf, .site .btn-leaf { color: #fff; }
+.site a.btn-ec, .site .btn-ec { color: #fff; }
+.site .nav-pills .nav-link.active { color: #fff; }
+/* Toast for website messages */
+.site-toast { position: fixed; top: 92px; right: 16px; z-index: 1090; width: min(380px, calc(100vw - 32px)); display: flex; gap: 12px; align-items: flex-start; background: #fff; color: var(--ink); border-radius: 14px; border-left: 5px solid #198754; padding: 12px 14px; box-shadow: 0 14px 40px rgba(0,0,0,.18); }
+.site-toast.is-error { border-left-color: var(--chili); }
+.site-toast i { font-size: 1.3rem; color: #198754; }
+.site-toast.is-error i { color: var(--chili); }
+.site-toast .btn-close { margin-left: auto; }
+@media (prefers-reduced-motion: no-preference) {
+    .site-toast { animation: toast-in .3s ease both; }
+    @keyframes toast-in { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+}

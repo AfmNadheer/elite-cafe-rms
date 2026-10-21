@@ -37,6 +37,7 @@
                     </ul>
                 @endif
             </div>
+            @if ($site['address'] || $site['phone'] || $site['email'])
             <div class="col-md-3">
                 <h3>Contact</h3>
                 <ul class="list-unstyled">
@@ -45,6 +46,7 @@
                     @if ($site['email'])<li class="mb-1"><i class="bi bi-envelope"></i> <a href="mailto:{{ $site['email'] }}">{{ $site['email'] }}</a></li>@endif
                 </ul>
             </div>
+            @endif
         </div>
         <div class="bottom d-flex flex-wrap justify-content-between gap-2">
             <span>&copy; {{ date('Y') }} Elite Cafe (Pvt) Ltd</span>

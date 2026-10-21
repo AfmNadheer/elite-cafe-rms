@@ -1,20 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>
+        // Apply the saved light / dark theme before the page paints
+        try { document.documentElement.dataset.bsTheme = localStorage.getItem('ec-theme') || 'light'; } catch (e) {}
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard') | {{ config('app.name') }}</title>
 
     {{-- Bootstrap 5 and Bootstrap Icons (CDN) --}}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
     <link rel="stylesheet" href="{{ asset('css/staff-menu.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/staff-theme.css') }}">
     <link rel="icon" type="image/svg+xml" href="{{ asset('images/logo.svg') }}">
     @stack('styles')
 </head>
-<body>
+<body class="staff">
+    <div class="st-progress" id="stProgress" aria-hidden="true"></div>
     @php
         $user = auth()->user();
 
@@ -105,6 +114,7 @@
                     <span class="avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}</span>
                     <span><span class="name">{{ $user->name }}</span><span class="role">{{ $user->roleName() }}</span></span>
                 </span>
+                <button class="theme-btn" type="button" id="themeBtn" aria-label="Switch light or dark mode" title="Light / dark (T)"><i class="bi bi-moon-stars"></i></button>
                 <button class="menu-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#staffMenu" aria-controls="staffMenu" aria-label="Open menu">
                     <i class="bi bi-list"></i> <span>Menu</span>
                     @if ($alertTotal)<span class="menu-btn-badge">{{ $alertTotal }}</span>@endif
@@ -160,26 +170,154 @@
         </div>
     </aside>
 
-    <main class="container-fluid py-4 px-3 px-lg-4">
-        {{-- Success and error messages --}}
+    {{-- Success and error messages as toasts (top right) --}}
+    <div class="st-toasts" id="stToasts" aria-live="polite">
         @if (session('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="bi bi-check-circle"></i> {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <div class="st-toast" role="status" data-autohide="5000">
+                <i class="bi bi-check-circle-fill lead-icon" aria-hidden="true"></i>
+                <div>{{ session('success') }}</div>
+                <button type="button" class="btn-close" aria-label="Close"></button>
             </div>
         @endif
         @if (session('error'))
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="bi bi-exclamation-triangle"></i> {{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <div class="st-toast is-error" role="alert">
+                <i class="bi bi-exclamation-octagon-fill lead-icon" aria-hidden="true"></i>
+                <div>{{ session('error') }}</div>
+                <button type="button" class="btn-close" aria-label="Close"></button>
             </div>
         @endif
+    </div>
 
+    <main class="container-fluid py-4 px-3 px-lg-4">
         @yield('content')
     </main>
 
+    {{-- Confirmation dialog used instead of the browser's confirm() box --}}
+    <div class="modal fade" id="stConfirm" tabindex="-1" aria-labelledby="stConfirmTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content border-0" style="border-radius: 1rem;">
+                <div class="modal-body p-4 text-center">
+                    <i class="bi bi-question-circle fs-1 text-warning" id="stConfirmIcon" aria-hidden="true"></i>
+                    <h2 class="h5 fw-bold mt-2" id="stConfirmTitle">Are you sure?</h2>
+                    <p class="text-muted mb-0" id="stConfirmText"></p>
+                </div>
+                <div class="modal-footer border-0 pt-0 justify-content-center gap-2 pb-4">
+                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">No, go back</button>
+                    <button type="button" class="btn btn-ec px-4" id="stConfirmOk">Yes, continue</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Keyboard shortcuts --}}
+    <div class="modal fade" id="stKeys" tabindex="-1" aria-labelledby="stKeysTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0" style="border-radius: 1rem;">
+                <div class="modal-header border-0"><h2 class="h5 fw-bold mb-0" id="stKeysTitle">Keyboard shortcuts</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+                <div class="modal-body pt-0">
+                    <table class="table mb-0">
+                        <tr><td><kbd class="st-kbd">M</kbd></td><td>Open or close the menu</td></tr>
+                        <tr><td><kbd class="st-kbd">/</kbd></td><td>Search on this page (or in the menu)</td></tr>
+                        <tr><td><kbd class="st-kbd">T</kbd></td><td>Switch light / dark mode</td></tr>
+                        <tr><td><kbd class="st-kbd">?</kbd></td><td>Show this list</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button type="button" class="st-top" id="stTop" aria-label="Back to top"><i class="bi bi-arrow-up"></i></button>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        (() => {
+            const html = document.documentElement;
+            const themeBtn = document.getElementById('themeBtn');
+            const setThemeIcon = () => themeBtn.innerHTML = html.dataset.bsTheme === 'dark' ? '<i class="bi bi-sun"></i>' : '<i class="bi bi-moon-stars"></i>';
+            const toggleTheme = () => {
+                html.dataset.bsTheme = html.dataset.bsTheme === 'dark' ? 'light' : 'dark';
+                try { localStorage.setItem('ec-theme', html.dataset.bsTheme); } catch (e) {}
+                setThemeIcon();
+            };
+            themeBtn.addEventListener('click', toggleTheme);
+            setThemeIcon();
+
+            // Toasts: close button, auto-hide for success
+            document.querySelectorAll('.st-toast').forEach(t => {
+                const close = () => t.remove();
+                t.querySelector('.btn-close').addEventListener('click', close);
+                if (t.dataset.autohide) setTimeout(close, +t.dataset.autohide);
+            });
+
+            // Nicer confirm dialog: forms written with onsubmit="return confirm('...')" use the modal instead
+            const modalEl = document.getElementById('stConfirm');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            let pending = null;
+            document.querySelectorAll('form[onsubmit*="confirm("]').forEach(form => {
+                const m = form.getAttribute('onsubmit').match(/confirm\((['"])([\s\S]*?)\1\)/);
+                if (!m) return;
+                const message = m[2].replace(/\\'/g, "'");
+                form.removeAttribute('onsubmit');
+                form.addEventListener('submit', e => {
+                    if (form.dataset.confirmed) return;
+                    e.preventDefault();
+                    pending = { form, submitter: e.submitter };
+                    const danger = /delete|cancel|remove|no-show/i.test(message);
+                    document.getElementById('stConfirmText').textContent = message;
+                    document.getElementById('stConfirmIcon').className = 'bi fs-1 ' + (danger ? 'bi-exclamation-triangle text-danger' : 'bi-question-circle text-warning');
+                    document.getElementById('stConfirmOk').className = 'btn px-4 ' + (danger ? 'btn-danger' : 'btn-ec');
+                    modal.show();
+                });
+            });
+            document.getElementById('stConfirmOk').addEventListener('click', () => {
+                if (!pending) return;
+                pending.form.dataset.confirmed = '1';
+                modal.hide();
+                pending.form.requestSubmit(pending.submitter || undefined);
+            });
+
+            // Loading bar on page changes; spinner on the button that sent a form
+            const bar = document.getElementById('stProgress');
+            const startBar = () => bar.classList.add('is-on');
+            document.addEventListener('submit', e => {
+                if (e.defaultPrevented) return;
+                startBar();
+                const b = e.submitter;
+                if (b && !b.classList.contains('is-busy')) {
+                    b.classList.add('is-busy');
+                    b.insertAdjacentHTML('afterbegin', '<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>');
+                }
+            });
+            document.addEventListener('click', e => {
+                const a = e.target.closest('a[href]');
+                if (!a || a.target === '_blank' || e.ctrlKey || e.metaKey || e.shiftKey) return;
+                const href = a.getAttribute('href');
+                if (href.startsWith('#') || href.startsWith('tel:') || href.startsWith('mailto:') || a.hasAttribute('download') || a.dataset.bsToggle) return;
+                if (/export=pdf|download/.test(href)) return;
+                startBar();
+            });
+            window.addEventListener('pageshow', () => bar.classList.remove('is-on'));
+
+            // Back to top
+            const top = document.getElementById('stTop');
+            window.addEventListener('scroll', () => top.classList.toggle('is-visible', window.scrollY > 600), { passive: true });
+            top.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+            // Shortcuts: T theme, ? help, / search
+            document.addEventListener('keydown', e => {
+                const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName) || document.activeElement.isContentEditable;
+                if (typing || e.ctrlKey || e.metaKey || e.altKey) return;
+                if (e.key === 't' || e.key === 'T') toggleTheme();
+                if (e.key === '?') bootstrap.Modal.getOrCreateInstance(document.getElementById('stKeys')).show();
+                if (e.key === '/') {
+                    const field = document.querySelector('main input[type="search"], main input[name="search"]');
+                    e.preventDefault();
+                    if (field) field.focus();
+                    else bootstrap.Offcanvas.getOrCreateInstance(document.getElementById('staffMenu')).show();
+                }
+            });
+        })();
+
         // Menu: type to filter pages; focus the search box when the menu opens; "M" key opens the menu
         (() => {
             const menu = document.getElementById('staffMenu');

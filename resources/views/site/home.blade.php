@@ -247,7 +247,6 @@
                     @endif
                 </div>
                 <div class="col-lg-7">
-                    @include('site._flash')
                     <form method="POST" action="{{ route('contact.send') }}" class="contact-card" novalidate>
                         @csrf
                         <div class="d-none" aria-hidden="true"><label>Website <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>

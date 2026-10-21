@@ -3,123 +3,169 @@
 @section('title', 'Dashboard')
 
 @section('content')
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h3 fw-bold mb-0">Welcome, {{ $user->name }}</h1>
-            <p class="text-muted mb-0">{{ $user->roleName() }} &middot; {{ now()->format('l, d F Y') }}</p>
-        </div>
-    </div>
-
-    {{-- Low-stock alert (FR-32) --}}
-    @if ($user->hasRole('admin', 'storekeeper') && $stats['low_stock'] > 0)
-        <div class="alert alert-danger d-flex flex-wrap align-items-center gap-2">
-            <i class="bi bi-exclamation-triangle-fill fs-5"></i>
-            <strong>{{ $stats['low_stock'] }} ingredient(s) are low on stock.</strong>
-            <a href="{{ route('stock-alerts.index') }}" class="alert-link ms-auto">View low-stock alerts</a>
-        </div>
-    @endif
-
-    {{-- Summary cards --}}
-    <div class="row g-3 mb-4">
-        @php
-            $cards = [
-                // FR-37: today's sales, number of orders, occupied tables, low-stock items
-                $user->hasRole('admin', 'cashier')
-                    ? ['label' => "Today's sales", 'value' => 'Rs. '.number_format($stats['today_sales'], 2), 'icon' => 'bi-cash-stack', 'color' => 'success']
-                    : ['label' => 'Reservations today', 'value' => $stats['today_reservations'], 'icon' => 'bi-calendar-check', 'color' => 'success'],
-                ['label' => 'Orders today', 'value' => $stats['today_orders'].' ('.$stats['open_orders'].' open)', 'icon' => 'bi-receipt', 'color' => 'primary'],
-                ['label' => 'Occupied tables', 'value' => $stats['occupied_tables'].' / '.$stats['tables'], 'icon' => 'bi-grid-3x3-gap', 'color' => 'warning'],
-                ['label' => 'Low-stock items', 'value' => $stats['low_stock'], 'icon' => 'bi-exclamation-triangle', 'color' => 'danger'],
-            ];
-        @endphp
-        @foreach ($cards as $card)
-            <div class="col-6 col-lg-3">
-                <div class="card stat-card border-0 shadow-sm h-100">
-                    <div class="card-body d-flex align-items-center gap-3">
-                        <div class="icon bg-{{ $card['color'] }}-subtle text-{{ $card['color'] }}">
-                            <i class="bi {{ $card['icon'] }}"></i>
-                        </div>
-                        <div>
-                            <div class="text-muted small">{{ $card['label'] }}</div>
-                            <div class="h4 fw-bold mb-0">{{ $card['value'] }}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        @endforeach
-    </div>
-
-    {{-- 7-day sales chart for the Admin (FR-37) --}}
-    @if ($chart)
-        <div class="card border-0 shadow-sm mb-4">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <span class="fw-semibold">Sales – last 7 days</span>
-                <a href="{{ route('reports.sales') }}" class="small">Full sales report</a>
-            </div>
-            <div class="card-body"><canvas id="salesChart" height="80"></canvas></div>
-        </div>
-    @endif
-
-    {{-- Modules this role can use (links are enabled as each iteration is completed) --}}
     @php
-        $modules = [
-            ['name' => 'Users', 'icon' => 'bi-people', 'roles' => ['admin'], 'iteration' => 1, 'route' => 'users.index'],
-            ['name' => 'Menu & Categories', 'icon' => 'bi-journal-text', 'roles' => ['admin'], 'iteration' => 1, 'route' => 'menu-items.index'],
-            ['name' => 'Table Map', 'icon' => 'bi-grid-3x3-gap', 'roles' => ['admin', 'waiter', 'cashier'], 'iteration' => 1, 'route' => 'tables.map'],
-            ['name' => 'Orders', 'icon' => 'bi-receipt', 'roles' => ['admin', 'waiter'], 'iteration' => 2, 'route' => 'orders.index'],
-            ['name' => 'Kitchen Display', 'icon' => 'bi-fire', 'roles' => ['admin', 'kitchen'], 'iteration' => 2, 'route' => 'kitchen.index'],
-            ['name' => 'Billing', 'icon' => 'bi-cash-coin', 'roles' => ['admin', 'cashier'], 'iteration' => 3, 'route' => 'billing.index'],
-            ['name' => 'Online Deliveries', 'icon' => 'bi-bicycle', 'roles' => ['admin', 'cashier'], 'iteration' => 7, 'route' => 'deliveries.index'],
-            ['name' => 'Rooms', 'icon' => 'bi-building', 'roles' => ['admin', 'cashier'], 'iteration' => 8, 'route' => 'room-bookings.board'],
-            ['name' => 'Day-End Summary', 'icon' => 'bi-calendar2-check', 'roles' => ['admin', 'cashier'], 'iteration' => 3, 'route' => 'day-end.index'],
-            ['name' => 'Inventory', 'icon' => 'bi-box-seam', 'roles' => ['admin', 'storekeeper'], 'iteration' => 4, 'route' => 'ingredients.index'],
-            ['name' => 'Suppliers & Purchases', 'icon' => 'bi-truck', 'roles' => ['admin', 'storekeeper'], 'iteration' => 4, 'route' => 'purchases.index'],
-            ['name' => 'Recipes', 'icon' => 'bi-journal-check', 'roles' => ['admin'], 'iteration' => 4, 'route' => 'recipes.index'],
-            ['name' => 'Expenses', 'icon' => 'bi-wallet2', 'roles' => ['admin'], 'iteration' => 4, 'route' => 'expenses.index'],
-            ['name' => 'Reports', 'icon' => 'bi-bar-chart-line', 'roles' => ['admin'], 'iteration' => 5, 'route' => 'reports.index'],
-            ['name' => 'Reservations', 'icon' => 'bi-calendar-check', 'roles' => ['admin', 'waiter', 'cashier'], 'iteration' => 5, 'route' => 'reservations.index'],
-            ['name' => 'QR Menu', 'icon' => 'bi-qr-code', 'roles' => ['admin'], 'iteration' => 5, 'route' => 'qr-menu'],
-            ['name' => 'Audit Log', 'icon' => 'bi-shield-check', 'roles' => ['admin'], 'iteration' => 6, 'route' => 'audit-logs.index'],
-            ['name' => 'Backup', 'icon' => 'bi-database-down', 'roles' => ['admin'], 'iteration' => 6, 'route' => 'backup.index'],
-        ];
+        $hour = now()->hour;
+        $greeting = $hour < 12 ? 'Good morning' : ($hour < 17 ? 'Good afternoon' : 'Good evening');
+        $firstName = \Illuminate\Support\Str::before($user->name, ' ') ?: $user->name;
+
+        // Quick actions per role: [label, hint, icon, route, primary]
+        $actions = [
+            'admin' => [
+                ['Reports', 'Sales, items, stock', 'bi-bar-chart-line', 'reports.index', true],
+                ['Table Map', 'Who is sitting where', 'bi-grid-3x3-gap', 'tables.map', false],
+                ['Room Board', 'Rooms today', 'bi-building', 'room-bookings.board', false],
+                ['Menu Items', 'Prices and photos', 'bi-journal-text', 'menu-items.index', false],
+                ['Users', 'Staff accounts', 'bi-people', 'users.index', false],
+                ['Website', 'Text, hours, photos', 'bi-globe', 'website-settings.edit', false],
+            ],
+            'cashier' => [
+                ['Bill an Order', 'Take payment', 'bi-cash-coin', 'billing.index', true],
+                ['Online Deliveries', 'Dispatch and close', 'bi-bicycle', 'deliveries.index', false],
+                ['Room Board', 'Check-in and check-out', 'bi-building', 'room-bookings.board', false],
+                ['New Room Booking', 'Find a free room', 'bi-plus-circle', 'room-bookings.availability', false],
+                ['Day-End Summary', 'Close the day', 'bi-calendar2-check', 'day-end.index', false],
+            ],
+            'waiter' => [
+                ['New Order', 'Pick a table', 'bi-plus-circle', 'orders.create', true],
+                ['Table Map', 'Free and busy tables', 'bi-grid-3x3-gap', 'tables.map', false],
+                ['Open Orders', 'Serve ready items', 'bi-receipt', 'orders.index', false],
+                ['Reservations', 'Today\'s bookings', 'bi-calendar-check', 'reservations.index', false],
+            ],
+            'kitchen' => [
+                ['Open Kitchen Display', 'Start and finish dishes', 'bi-fire', 'kitchen.index', true],
+            ],
+            'storekeeper' => [
+                ['New Purchase', 'Add stock from a supplier', 'bi-cart-plus', 'purchases.create', true],
+                ['Ingredients & Stock', 'Levels and adjustments', 'bi-box-seam', 'ingredients.index', false],
+                ['Low-Stock Alerts', 'What to reorder', 'bi-exclamation-triangle', 'stock-alerts.index', false],
+                ['Suppliers', 'Contacts', 'bi-truck', 'suppliers.index', false],
+            ],
+        ][$user->role] ?? [];
+        $actions = array_filter($actions, fn ($a) => Route::has($a[3]));
     @endphp
 
-    <h2 class="h5 fw-semibold mb-3">Your modules</h2>
-    <div class="row g-3">
-        @foreach ($modules as $module)
-            @if ($user->hasRole(...$module['roles']))
-                <div class="col-6 col-md-4 col-xl-3">
-                    @php $ready = isset($module['route']) && Route::has($module['route']); @endphp
-                    <a @if ($ready) href="{{ route($module['route']) }}" @endif
-                       class="card module-card border-0 shadow-sm h-100 text-decoration-none text-body {{ $ready ? '' : 'opacity-75' }}">
-                        <div class="card-body text-center py-4">
-                            <i class="bi {{ $module['icon'] }} text-ec" style="font-size: 2rem;"></i>
-                            <div class="fw-semibold mt-2">{{ $module['name'] }}</div>
-                            @if ($ready)
-                                <span class="badge text-bg-success mt-2">Open</span>
-                            @else
-                                <span class="badge text-bg-light mt-2">Coming in iteration {{ $module['iteration'] }}</span>
-                            @endif
-                        </div>
+    {{-- Greeting and live clock --}}
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+        <div>
+            <p class="dash-hello">{{ $greeting }}, {{ $firstName }}</p>
+            <div class="text-muted">{{ now()->format('l, d F Y') }} · {{ $user->roleName() }}</div>
+        </div>
+        <div class="text-end">
+            <div class="dash-clock" id="dashClock">{{ now()->format('g:i A') }}</div>
+            <div class="small text-muted">Press <kbd class="st-kbd">M</kbd> for the menu, <kbd class="st-kbd">?</kbd> for shortcuts</div>
+        </div>
+    </div>
+
+    {{-- Things that need attention now --}}
+    @if ($alerts)
+        <div class="d-flex flex-wrap gap-2 mb-4" aria-label="Needs attention">
+            @foreach ($alerts as [$text, $icon, $route])
+                <a href="{{ route($route) }}" class="alert-chip"><i class="bi {{ $icon }}" aria-hidden="true"></i> {{ $text }}</a>
+            @endforeach
+        </div>
+    @endif
+
+    {{-- Live numbers --}}
+    @if ($kpis)
+        <div class="row g-3 mb-4">
+            @foreach ($kpis as [$label, $value, $sub, $icon, $route, $progress])
+                <div class="col-sm-6 {{ count($kpis) >= 5 ? 'col-lg-4 col-xxl' : 'col-xl-3' }}">
+                    <a href="{{ Route::has($route) ? route($route) : '#' }}" class="kpi d-block text-decoration-none text-reset">
+                        <div class="kpi-label"><i class="bi {{ $icon }}" aria-hidden="true"></i> {{ $label }}</div>
+                        <div class="kpi-value">{{ $value }}</div>
+                        <div class="kpi-sub">{{ $sub }}</div>
+                        @if (! is_null($progress))
+                            <div class="kpi-bar" role="img" aria-label="{{ $progress }}% full"><span style="width: {{ $progress }}%"></span></div>
+                        @endif
                     </a>
                 </div>
-            @endif
-        @endforeach
+            @endforeach
+        </div>
+    @endif
+
+    <div class="row g-4">
+        {{-- Quick actions --}}
+        <div class="{{ $chart || $recentBills->isNotEmpty() ? 'col-xl-5' : 'col-12' }}">
+            <h2 class="h5 fw-bold mb-3">Quick actions</h2>
+            <div class="row g-3">
+                @foreach ($actions as [$label, $hint, $icon, $route, $primary])
+                    <div class="{{ $chart || $recentBills->isNotEmpty() ? 'col-sm-6 col-xl-12 col-xxl-6' : 'col-sm-6 col-lg-4' }}">
+                        <a href="{{ route($route) }}" class="action-tile {{ $primary ? 'is-primary' : '' }}">
+                            <i class="bi {{ $icon }}" aria-hidden="true"></i>
+                            <span>{{ $label }}<small>{{ $hint }}</small></span>
+                        </a>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
+        @if ($chart || $recentBills->isNotEmpty())
+            <div class="col-xl-7">
+                @if ($chart)
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span>Restaurant sales, last 7 days</span>
+                            <a href="{{ route('reports.sales') }}" class="small fw-normal">Full report</a>
+                        </div>
+                        <div class="card-body"><canvas id="salesChart" height="110" aria-label="Sales for the last 7 days" role="img"></canvas></div>
+                    </div>
+                @endif
+
+                @if ($recentBills->isNotEmpty())
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span>Latest bills</span>
+                            <a href="{{ route('bills.index') }}" class="small fw-normal">All bills</a>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead><tr><th>Bill</th><th>Table</th><th>Time</th><th class="text-end">Total (Rs.)</th></tr></thead>
+                                <tbody>
+                                    @foreach ($recentBills as $bill)
+                                        <tr>
+                                            <td><a href="{{ route('bills.show', $bill) }}" class="fw-semibold text-decoration-none">{{ $bill->bill_no }}</a></td>
+                                            <td>{{ $bill->order->table?->table_no ?? ucfirst(str_replace('_', ' ', $bill->order->order_type)) }}</td>
+                                            <td class="text-muted">{{ $bill->created_at->format('g:i A') }}</td>
+                                            <td class="text-end fw-semibold">{{ number_format($bill->total, 2) }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                @endif
+            </div>
+        @endif
     </div>
 @endsection
 
+@push('scripts')
+<script>
+    // Live clock
+    setInterval(() => {
+        document.getElementById('dashClock').textContent = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    }, 15000);
+</script>
 @if ($chart)
-    @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>
-        new Chart(document.getElementById('salesChart'), {
-            type: 'bar',
-            data: {
-                labels: @json($chart['labels']),
-                datasets: [{ label: 'Sales (Rs.)', data: @json($chart['values']), backgroundColor: '#8b3a1a', borderRadius: 6 }]
-            },
-            options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
-        });
+        (() => {
+            const dark = document.documentElement.dataset.bsTheme === 'dark';
+            new Chart(document.getElementById('salesChart'), {
+                type: 'bar',
+                data: {
+                    labels: @json($chart['labels']),
+                    datasets: [{ label: 'Sales (Rs.)', data: @json($chart['values']), backgroundColor: '#8b3a1a', hoverBackgroundColor: '#f2a541', borderRadius: 8, maxBarThickness: 46 }]
+                },
+                options: {
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => 'Rs. ' + c.parsed.y.toLocaleString() } } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: dark ? '#332b25' : '#efe8e1' }, ticks: { color: dark ? '#a89a8f' : '#7c7068', callback: v => v.toLocaleString() } },
+                        x: { grid: { display: false }, ticks: { color: dark ? '#a89a8f' : '#7c7068' } }
+                    }
+                }
+            });
+        })();
     </script>
-    @endpush
 @endif
+@endpush
