@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\RoomType;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -20,14 +21,24 @@ class RoomTypeController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        RoomType::create($request->validate($this->rules()));
+        $data = $request->validate($this->rules());
+        $data['photo'] = $request->hasFile('photo') ? $request->file('photo')->store('rooms', 'public') : null;
+        RoomType::create($data);
 
         return back()->with('success', 'Room type added.');
     }
 
     public function update(Request $request, RoomType $roomType): RedirectResponse
     {
-        $roomType->update($request->validate($this->rules($roomType)));
+        $data = $request->validate($this->rules($roomType));
+        unset($data['photo']);
+        if ($request->hasFile('photo')) {
+            if ($roomType->photo) {
+                Storage::disk('public')->delete($roomType->photo);
+            }
+            $data['photo'] = $request->file('photo')->store('rooms', 'public');
+        }
+        $roomType->update($data);
 
         return back()->with('success', $roomType->name.' updated. New bookings use the new price.');
     }
@@ -50,6 +61,7 @@ class RoomTypeController extends Controller
             'price_per_night' => ['required', 'numeric', 'min:0', 'max:9999999'],
             'capacity' => ['required', 'integer', 'min:1', 'max:20'],
             'description' => ['nullable', 'string', 'max:1000'],
+            'photo' => ['nullable', 'image', 'max:4096'],     // shown on the website
         ];
     }
 }

@@ -6,6 +6,7 @@ use App\Http\Controllers\BackupController;
 use App\Http\Controllers\BillController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ContactMessageController;
 use App\Http\Controllers\CustomerAuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DayEndController;
@@ -27,16 +28,19 @@ use App\Http\Controllers\RoomBookingController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\RoomTypeController;
 use App\Http\Controllers\ShopController;
+use App\Http\Controllers\SiteController;
 use App\Http\Controllers\ShopRoomController;
 use App\Http\Controllers\StockAdjustmentController;
 use App\Http\Controllers\StockAlertController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TableController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\WebsiteSettingsController;
 use Illuminate\Support\Facades\Route;
 
-// Open the system -> dashboard (or login if not logged in)
-Route::redirect('/', '/dashboard');
+// Public website (home page with menu, rooms, about and contact)
+Route::get('/', [SiteController::class, 'home'])->name('home');
+Route::post('/contact', [SiteController::class, 'contact'])->middleware('throttle:5,1')->name('contact.send');
 
 // Digital menu for customers (QR code), no login needed (FR-41)
 Route::get('/menu', [PublicMenuController::class, 'index'])->name('public.menu');
@@ -218,6 +222,13 @@ Route::middleware('auth')->group(function () {
 
         // QR code for the digital menu (FR-41)
         Route::get('/qr-menu', [PublicMenuController::class, 'qr'])->name('qr-menu');
+
+        // Public website settings and contact form messages
+        Route::get('/website-settings', [WebsiteSettingsController::class, 'edit'])->name('website-settings.edit');
+        Route::put('/website-settings', [WebsiteSettingsController::class, 'update'])->name('website-settings.update');
+        Route::get('/messages', [ContactMessageController::class, 'index'])->name('messages.index');
+        Route::patch('/messages/{contactMessage}/toggle', [ContactMessageController::class, 'toggle'])->name('messages.toggle');
+        Route::delete('/messages/{contactMessage}', [ContactMessageController::class, 'destroy'])->name('messages.destroy');
 
         // Audit log (NFR-06) and database backup
         Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');

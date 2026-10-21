@@ -13,7 +13,7 @@
     <div class="row login-wrap">
         {{-- Left side: brand (hidden on phones) --}}
         <div class="col-lg-6 d-none d-lg-flex login-brand flex-column justify-content-center align-items-center text-center p-5">
-            <i class="bi bi-cup-hot-fill" style="font-size: 5rem;"></i>
+            <img src="{{ asset('images/logo.svg') }}" alt="Elite Cafe" width="110" height="110">
             <h1 class="fw-bold mt-3">Elite Cafe</h1>
             <p class="lead mb-0">Restaurant Management System</p>
         </div>
@@ -23,7 +23,7 @@
             <div class="card login-card border-0 shadow-sm">
                 <div class="card-body p-4 p-md-5">
                     <div class="text-center d-lg-none mb-3">
-                        <i class="bi bi-cup-hot-fill text-ec" style="font-size: 3rem;"></i>
+                        <img src="{{ asset('images/logo.svg') }}" alt="Elite Cafe" width="64" height="64">
                     </div>
                     <h2 class="h4 fw-bold mb-1">Staff Login</h2>
                     <p class="text-muted mb-4">Sign in with your username and password.</p>
@@ -68,6 +68,7 @@
                             <i class="bi bi-box-arrow-in-right"></i> Login
                         </button>
                     </form>
+                    <p class="text-center small mt-3 mb-0"><a href="{{ route('home') }}"><i class="bi bi-arrow-left"></i> Back to the website</a></p>
                 </div>
             </div>
         </div>

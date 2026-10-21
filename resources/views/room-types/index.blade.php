@@ -20,13 +20,18 @@
                     @foreach ($types as $type)
                         <tr>
                             <td colspan="4" class="p-0">
-                                <form method="POST" action="{{ route('room-types.update', $type) }}" id="type{{ $type->id }}" class="d-flex gap-2 p-2">
+                                <form method="POST" action="{{ route('room-types.update', $type) }}" id="type{{ $type->id }}" class="d-flex flex-wrap gap-2 p-2" enctype="multipart/form-data">
                                     @csrf
                                     @method('PUT')
                                     <input type="text" name="name" value="{{ $type->name }}" class="form-control form-control-sm" aria-label="Name" style="max-width: 180px;">
                                     <input type="number" step="0.01" min="0" name="price_per_night" value="{{ $type->price_per_night }}" class="form-control form-control-sm" aria-label="Price per night" style="max-width: 140px;">
                                     <input type="number" min="1" max="20" name="capacity" value="{{ $type->capacity }}" class="form-control form-control-sm" aria-label="Max guests" style="max-width: 90px;">
                                     <input type="text" name="description" value="{{ $type->description }}" class="form-control form-control-sm" aria-label="Description">
+                                    <div class="d-flex align-items-center gap-2 w-100">
+                                        @if ($type->photo)<img src="{{ asset('storage/'.$type->photo) }}" alt="" style="height: 38px; border-radius: 6px;">@endif
+                                        <input type="file" name="photo" accept="image/*" class="form-control form-control-sm" aria-label="Photo for the website" style="max-width: 320px;">
+                                        <span class="small text-muted">Photo shown on the website</span>
+                                    </div>
                                 </form>
                             </td>
                             <td class="text-center">{{ $type->rooms_count }}</td>
@@ -45,7 +50,7 @@
         </div>
     </div>
 
-    <form method="POST" action="{{ route('room-types.store') }}" class="card border-0 shadow-sm">
+    <form method="POST" action="{{ route('room-types.store') }}" class="card border-0 shadow-sm" enctype="multipart/form-data">
         @csrf
         <div class="card-body row g-2 align-items-end">
             <div class="col-12 fw-semibold">Add a room type</div>
@@ -53,6 +58,7 @@
             <div class="col-md-2"><input type="number" step="0.01" min="0" name="price_per_night" value="{{ old('price_per_night') }}" class="form-control" placeholder="Price / night"></div>
             <div class="col-md-2"><input type="number" min="1" max="20" name="capacity" value="{{ old('capacity', 2) }}" class="form-control" placeholder="Max guests"></div>
             <div class="col-md-3"><input type="text" name="description" value="{{ old('description') }}" class="form-control" placeholder="Description"></div>
+            <div class="col-md-10"><input type="file" name="photo" accept="image/*" class="form-control" aria-label="Photo"></div>
             <div class="col-md-2"><button class="btn btn-ec w-100"><i class="bi bi-plus-lg"></i> Add</button></div>
         </div>
     </form>
