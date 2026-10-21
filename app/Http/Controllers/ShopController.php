@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Delivery;
 use App\Models\MenuItem;
 use App\Models\OnlinePayment;
+use App\Models\RoomBooking;
 use App\Services\DeliveryService;
 use App\Services\OnlinePaymentService;
 use App\Services\PayHereService;
@@ -178,7 +179,7 @@ class ShopController extends Controller
             'action' => $this->payhere->checkoutUrl(),
             'fields' => $this->payhere->checkoutFields(
                 $onlinePayment,
-                'Elite Cafe delivery order',
+                $onlinePayment->payable_type === 'RoomRequest' ? 'Elite Cafe room booking' : 'Elite Cafe delivery order',
                 route('shop.pay.return', $onlinePayment),
                 route('shop.pay.cancel', $onlinePayment),
             ),
@@ -190,14 +191,21 @@ class ShopController extends Controller
     {
         $this->authorizePayment($onlinePayment);
 
-        $delivery = Delivery::where('online_payment_id', $onlinePayment->id)->first();
-        if ($onlinePayment->status === 'success') {
+        $isRoom = $onlinePayment->payable_type === 'RoomRequest';
+        $delivery = $isRoom ? null : Delivery::where('online_payment_id', $onlinePayment->id)->first();
+        $booking = $isRoom && $onlinePayment->status === 'success'
+            ? RoomBooking::where('customer_id', $onlinePayment->payable_id)
+                ->whereHas('payments', fn ($q) => $q->where('approval_code', 'PH'.$onlinePayment->gateway_payment_id))->latest('id')->first()
+            : null;
+        if ($onlinePayment->status === 'success' && ! $isRoom) {
             session()->forget('cart');
         }
 
         return view('shop.payment-status', [
             'payment' => $onlinePayment,
             'delivery' => $delivery,
+            'booking' => $booking,
+            'isRoom' => $isRoom,
             'sandbox' => $this->payhere->isSandbox(),
         ]);
     }
@@ -210,7 +218,9 @@ class ShopController extends Controller
             $onlinePayment->update(['status' => 'cancelled', 'status_message' => 'Cancelled by the customer']);
         }
 
-        return redirect()->route('shop.cart')->with('error', 'Payment cancelled. Your cart is still here.');
+        return $onlinePayment->payable_type === 'RoomRequest'
+            ? redirect()->route('shop.rooms.index')->with('error', 'Payment cancelled. The room was not booked.')
+            : redirect()->route('shop.cart')->with('error', 'Payment cancelled. Your cart is still here.');
     }
 
     public function payStatus(OnlinePayment $onlinePayment): JsonResponse
@@ -290,7 +300,8 @@ class ShopController extends Controller
     private function authorizePayment(OnlinePayment $payment): void
     {
         abort_unless(
-            $payment->payable_type === 'Cart' && (int) ($payment->data['customer_id'] ?? 0) === (int) auth('customer')->id(),
+            in_array($payment->payable_type, ['Cart', 'RoomRequest'], true)
+                && (int) ($payment->data['customer_id'] ?? 0) === (int) auth('customer')->id(),
             404
         );
     }

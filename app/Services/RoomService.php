@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\OnlinePayment;
 use App\Models\Room;
 use App\Models\RoomBooking;
 use Illuminate\Support\Carbon;
@@ -75,5 +76,62 @@ class RoomService
         $arriving = $bookings->first(fn ($b) => $b->status === 'booked' && $b->check_in->toDateString() <= $d && $b->check_out->toDateString() > $d);
 
         return $arriving ? ['arriving', $arriving] : ['available', null];
+    }
+
+    /** A free room of this type for the dates, or null. */
+    public function freeRoomOfType(int $roomTypeId, string $in, string $out): ?Room
+    {
+        return $this->availableRooms($in, $out)->firstWhere('room_type_id', $roomTypeId);
+    }
+
+    /**
+     * Create the booking after PayHere confirms an online room payment.
+     * Must be called inside a transaction. Returns null when every room of the type was taken meanwhile.
+     */
+    public function placeOnlineBooking(OnlinePayment $payment): ?RoomBooking
+    {
+        $d = $payment->data;
+
+        // Lock the rooms of this type so two payments cannot get the same room
+        Room::where('room_type_id', $d['room_type_id'])->lockForUpdate()->get();
+        $room = $this->freeRoomOfType((int) $d['room_type_id'], $d['check_in'], $d['check_out']);
+
+        if (! $room) {
+            return null;
+        }
+
+        $booking = RoomBooking::create([
+            'booking_no' => $this->nextBookingNumber(),
+            'room_id' => $room->id,
+            'customer_id' => $d['customer_id'],
+            'user_id' => null,
+            'guest_name' => $d['guest_name'],
+            'guest_phone' => $d['guest_phone'],
+            'guest_email' => $d['guest_email'],
+            'adults' => $d['adults'],
+            'children' => $d['children'],
+            'check_in' => $d['check_in'],
+            'check_out' => $d['check_out'],
+            'nights' => $d['nights'],
+            'price_per_night' => $d['price_per_night'],
+            'room_total' => $d['room_total'],
+            'total' => $d['room_total'],
+            'amount_paid' => 0,
+            'status' => 'booked',
+            'source' => 'online',
+            'notes' => $d['notes'] ?? null,
+        ]);
+
+        $booking->payments()->create([
+            'method' => 'online',
+            'amount' => $payment->amount,
+            'card_last4' => $payment->card_no ? substr(preg_replace('/\D/', '', $payment->card_no), -4) : null,
+            'approval_code' => 'PH'.$payment->gateway_payment_id,
+            'note' => 'Paid online',
+            'paid_at' => now(),
+        ]);
+        $booking->increment('amount_paid', (float) $payment->amount);
+
+        return $booking;
     }
 }

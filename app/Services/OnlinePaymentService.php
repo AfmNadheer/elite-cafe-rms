@@ -18,6 +18,7 @@ class OnlinePaymentService
         private BillingService $billing,
         private DeliveryService $delivery,
         private PayHereService $payhere,
+        private RoomService $rooms,
     ) {
     }
 
@@ -40,6 +41,7 @@ class OnlinePaymentService
             match ($payment->payable_type) {
                 'Order' => $this->closeRestaurantBill($payment),
                 'Cart' => $this->placeDelivery($payment),
+                'RoomRequest' => $this->placeRoomBooking($payment),
                 default => null,
             };
         });
@@ -69,6 +71,15 @@ class OnlinePaymentService
 
         $data = $payment->data;
         $this->billing->closeOrder($order, $data['amounts'], $data['cashier_id'], $data['approved_by'] ?? null, $this->cardPayment($payment));
+    }
+
+    private function placeRoomBooking(OnlinePayment $payment): void
+    {
+        $booking = $this->rooms->placeOnlineBooking($payment);
+
+        $payment->update(['status_message' => $booking
+            ? 'Booking '.$booking->booking_no.' confirmed'
+            : 'Paid, but no room of this type was free any more. Refund needed.']);
     }
 
     private function placeDelivery(OnlinePayment $payment): void

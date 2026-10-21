@@ -27,6 +27,7 @@ use App\Http\Controllers\RoomBookingController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\RoomTypeController;
 use App\Http\Controllers\ShopController;
+use App\Http\Controllers\ShopRoomController;
 use App\Http\Controllers\StockAdjustmentController;
 use App\Http\Controllers\StockAlertController;
 use App\Http\Controllers\SupplierController;
@@ -51,6 +52,7 @@ Route::prefix('shop')->name('shop.')->group(function () {
     Route::post('/cart', [ShopController::class, 'addToCart'])->name('cart.add');
     Route::patch('/cart', [ShopController::class, 'updateCart'])->name('cart.update');
     Route::delete('/cart/{menuItem}', [ShopController::class, 'removeFromCart'])->name('cart.remove');
+    Route::get('/rooms', [ShopRoomController::class, 'index'])->name('rooms.index');
 
     // Customer register / login
     Route::middleware('guest:customer')->group(function () {
@@ -73,6 +75,12 @@ Route::prefix('shop')->name('shop.')->group(function () {
         Route::get('/pay/{onlinePayment}/cancel', [ShopController::class, 'payCancel'])->name('pay.cancel');
         Route::get('/pay/{onlinePayment}/status', [ShopController::class, 'payStatus'])->name('pay.status');
         Route::post('/pay/{onlinePayment}/confirm-sandbox', [ShopController::class, 'confirmSandbox'])->name('pay.confirm-sandbox');
+
+        // Online room booking
+        Route::get('/rooms/book', [ShopRoomController::class, 'book'])->name('rooms.book');
+        Route::post('/rooms/book', [ShopRoomController::class, 'store'])->name('rooms.store');
+        Route::get('/my-bookings', [ShopRoomController::class, 'myBookings'])->name('rooms.mine');
+        Route::get('/my-bookings/{roomBooking}', [ShopRoomController::class, 'show'])->name('rooms.show');
     });
 });
 

@@ -21,13 +21,14 @@
     @endphp
     <nav class="navbar navbar-expand-md navbar-dark bg-ec shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-semibold" href="{{ route('shop.index') }}"><i class="bi bi-cup-hot-fill"></i> Elite Cafe <span class="small fw-normal opacity-75">Delivery</span></a>
+            <a class="navbar-brand fw-semibold" href="{{ route('shop.index') }}"><i class="bi bi-cup-hot-fill"></i> Elite Cafe <span class="small fw-normal opacity-75">Online</span></a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#shopNav" aria-controls="shopNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="shopNav">
                 <ul class="navbar-nav ms-auto align-items-md-center gap-md-2">
-                    <li class="nav-item"><a class="nav-link {{ request()->routeIs('shop.index') ? 'active' : '' }}" href="{{ route('shop.index') }}"><i class="bi bi-journal-text"></i> Menu</a></li>
+                    <li class="nav-item"><a class="nav-link {{ request()->routeIs('shop.index') ? 'active' : '' }}" href="{{ route('shop.index') }}"><i class="bi bi-journal-text"></i> Food</a></li>
+                    <li class="nav-item"><a class="nav-link {{ request()->routeIs('shop.rooms.index', 'shop.rooms.book') ? 'active' : '' }}" href="{{ route('shop.rooms.index') }}"><i class="bi bi-building"></i> Rooms</a></li>
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('shop.cart') ? 'active' : '' }}" href="{{ route('shop.cart') }}">
                             <i class="bi bi-cart3"></i> Cart
@@ -36,6 +37,7 @@
                     </li>
                     @if ($customer)
                         <li class="nav-item"><a class="nav-link {{ request()->routeIs('shop.orders*') ? 'active' : '' }}" href="{{ route('shop.orders') }}"><i class="bi bi-bag-check"></i> My Orders</a></li>
+                        <li class="nav-item"><a class="nav-link {{ request()->routeIs('shop.rooms.mine', 'shop.rooms.show') ? 'active' : '' }}" href="{{ route('shop.rooms.mine') }}"><i class="bi bi-calendar-check"></i> My Bookings</a></li>
                         <li class="nav-item">
                             <form method="POST" action="{{ route('shop.logout') }}" class="m-0">
                                 @csrf

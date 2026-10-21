@@ -7,7 +7,16 @@
         <div class="col-md-8 col-lg-6">
             <div class="card border-0 shadow-sm">
                 <div class="card-body p-4 text-center">
-                    @if ($payment->status === 'success' && $delivery)
+                    @if ($payment->status === 'success' && $isRoom && $booking)
+                        <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+                        <h1 class="h4 fw-bold mt-2">Payment successful – room booked!</h1>
+                        <p class="text-muted">{{ $booking->room->type->name }} · Room {{ $booking->room->room_no }} · {{ $booking->check_in->format('d M') }} – {{ $booking->check_out->format('d M Y') }}</p>
+                        <a href="{{ route('shop.rooms.show', $booking) }}" class="btn btn-ec btn-lg"><i class="bi bi-calendar-check"></i> View booking {{ $booking->booking_no }}</a>
+                    @elseif ($payment->status === 'success' && $isRoom)
+                        <i class="bi bi-exclamation-circle-fill text-warning" style="font-size: 3rem;"></i>
+                        <h1 class="h4 fw-bold mt-2">Payment received</h1>
+                        <p class="text-muted">{{ $payment->status_message }} Please call the hotel with reference {{ $payment->order_ref }}.</p>
+                    @elseif ($payment->status === 'success' && $delivery)
                         <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
                         <h1 class="h4 fw-bold mt-2">Payment successful – order placed!</h1>
                         <p class="text-muted">Rs. {{ number_format($payment->amount, 2) }} paid. The kitchen has your order.</p>
@@ -30,7 +39,7 @@
                         <i class="bi bi-x-circle-fill text-danger" style="font-size: 3rem;"></i>
                         <h1 class="h4 fw-bold mt-2">Payment {{ $payment->status }}</h1>
                         <p class="text-muted">{{ $payment->status_message }}</p>
-                        <a href="{{ route('shop.cart') }}" class="btn btn-outline-secondary">Back to cart</a>
+                        <a href="{{ $isRoom ? route('shop.rooms.index') : route('shop.cart') }}" class="btn btn-outline-secondary">{{ $isRoom ? 'Back to rooms' : 'Back to cart' }}</a>
                     @endif
                 </div>
             </div>
